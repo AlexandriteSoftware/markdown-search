@@ -13,8 +13,17 @@ Markdown Full Text Search is a VSCode extension that makes it easy to search for
 
 Get it through Visual Studio Code marketplace: [Markdown Full Text Search](https://marketplace.visualstudio.com/items?itemName=AlexandriteSoftware.markdown-search)
 
+## Limitations and Known Issues
+
+- Deleted files stays in the search index. Workaround: reload the window.
+
 ## Release Notes
+
+### 0.1.1
+
+- Add support for adding links from the search results.
+- Add filesystem watcher to update search index when files are added, or changed.
 
 ### 0.1.0
 
-Initial release of Markdown Full Text Search.
+- Initial release of Markdown Full Text Search.
