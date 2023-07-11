@@ -3,120 +3,143 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import * as vscode from 'vscode';
 import * as MiniSearch from 'minisearch';
+import * as minimatch from 'minimatch';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
 
-type Log = (message : string) => void;
+type Log = (message: string) => void;
+
+export type Exclusions = { [key: string]: boolean };
 
 /** Represents a file in the knowledge base */
-interface File {
+export interface File {
 
   /** Full (absolute) path to the file, e.g. `c:\kb\project\readme.md`. */
-  fullPath : string;
+  fullPath: string;
 
   /** Absolute path to the file's folder from the workspace folder, e.g. `/project`. */
-  folder : string;
+  folder: string;
 
   /** Absolute path to the file from the workspace folder, e.g. `/project/readme.md`. */
-  path : string;
+  path: string;
 
   /** The file's name without extension, e.g. `readme`. */
-  basename : string;
+  basename: string;
 
   /** The file's extension, e.g. `.md`. */
-  extension : string;
+  extension: string;
 
   /** The file's type, `markdown` or `other`. */
-  type : string;
+  type: string;
 
   /** When the file's type is `markdown`, contains sha1 hash of the content.  */
-  hash : string|null;
+  hash: string | null;
 
   /** Modification datetime of the file, as returned by the filesystem. */
-  modified : Date;
+  modified: Date;
 }
 
 /** Represents a knowldge base, which is a folder with markdown files. */
-interface KnowledgeBase {
+export interface KnowledgeBase {
 
   /** Path to the knowledge base's root folder. */
   root: string;
+
+  /** Excluded files and folders. */
+  exclude: Exclusions;
 
   /** This knowledge base's files. */
   files: File[];
 }
 
 interface KnowledgeBaseFilesystemWatcher {
-  root : string;
-  dispose() : void;
+  root: string;
+  dispose(): void;
 }
 
-/** The list of loaded knowledge bases. Each corresponds to the workspace's folder.  */
-const knowledgeBases : KnowledgeBase[] = [];
+/** The list of loaded knowledge bases. Each corresponds to the workspace's folder. */
+const knowledgeBases: KnowledgeBase[] = [];
 
-/**
- * The list of filesystem watchers. Each corresponds to
- * the workspace's folder and loaded knoeledge base.
- */
-const kbFilesystemWatchers : KnowledgeBaseFilesystemWatcher[] = [];
+/** The list of filesystem watchers. Each corresponds to the workspace's folder
+ * and the loaded knowledge base associated with it. */
+const kbFilesystemWatchers: KnowledgeBaseFilesystemWatcher[] = [];
 
 // typescript definition for minisearch is a bit scratchy
 const miniSearchClass = MiniSearch as any;
-const miniSearch : MiniSearch.default = new miniSearchClass({
+const miniSearch: MiniSearch.default = new miniSearchClass({
   fields: ['title', 'text'],
   storeFields: ['title', 'path']
 });
 
-async function addFileToSearchIndex(file : File) : Promise<boolean> {
+async function addFileToSearchIndex(file: File): Promise<boolean> {
   let content = '';
   try {
-    content = await fs.readFile(file.fullPath, { encoding : 'utf8'});
+    content = await fs.readFile(file.fullPath, { encoding: 'utf8' });
   } catch {
     return false;
   }
 
   miniSearch.add({
-    id : file.fullPath,
+    id: file.fullPath,
     title: file.basename,
-    path : file.path,
+    path: file.path,
     text: content
   });
 
   return true;
 }
 
-async function replaceFileInSearchIndex(file : File) {
+async function replaceFileInSearchIndex(file: File) {
   let content = '';
   try {
-    content = await fs.readFile(file.fullPath, { encoding : 'utf8'});
+    content = await fs.readFile(file.fullPath, { encoding: 'utf8' });
   } catch {
     return false;
   }
 
   miniSearch.replace({
-    id : file.fullPath,
+    id: file.fullPath,
     title: file.basename,
-    path : file.path,
+    path: file.path,
     text: content
   });
 
   return true;
 }
 
-function removePathFromSearchIndex(fileFullPath : string) {
+function removePathFromSearchIndex(fileFullPath: string) {
   miniSearch.discard(fileFullPath);
 }
 
-/** Filters out files and folders starting with `.`. */
-function kbFileFilter(root : string, file : string) : boolean {
-  const rootFullPath = path.resolve(root);
-  const fileFullPath = path.resolve(file);
+/**
+ * Filters out mathing and hidden (starting with `.`) files and folders.
+ * 
+ * @param {KnowledgeBase} kb The knowledge base.
+ * @param {string} file The path to the file.
+ */
+export function kbFileFilter(log: Log, kb: KnowledgeBase, file: string): boolean {
+  //log(`kbFileFilter: kb.root='${kb.root}' file='${file}'`);
+
+  const rootFullPath = path.resolve(kb.root);
+  const fileFullPath = path.resolve(rootFullPath, file);
 
   const relativePath = path.relative(rootFullPath, fileFullPath);
+  if (relativePath.startsWith('..')) {
+    // the file path is outside of the knowledge base
+    return false;
+  }
+
+  for (const pattern of Object.keys(kb.exclude)) {
+    if (minimatch(relativePath, pattern, { matchBase: true })) {
+      return false;
+    }
+  }
+
   const relativePathItems = relativePath.split(path.sep);
 
   for (const item of relativePathItems) {
+    // the file is in a hidden folder or is hidden itself
     if (0 === item.indexOf('.')) {
       return false;
     }
@@ -131,12 +154,12 @@ function kbFileFilter(root : string, file : string) : boolean {
  * @param {string} root Path to the knowledge base root folder.
  * @param {string} file Path to the knowledge base file.
  */
-async function getKbFileInfo(root : string, file : string) : Promise<File|null> {
-  if (!kbFileFilter(root, file)) {
+async function getKbFileInfo(log: Log, kb: KnowledgeBase, file: string): Promise<File | null> {
+  if (!kbFileFilter(log, kb, file)) {
     return null;
   }
 
-  const rootFullPath = path.resolve(root);
+  const rootFullPath = path.resolve(kb.root);
   const fullPath = path.resolve(file);
   const relativePath = path.relative(rootFullPath, fullPath);
   const name = path.basename(fullPath);
@@ -160,12 +183,12 @@ async function getKbFileInfo(root : string, file : string) : Promise<File|null> 
   return {
     fullPath,
     folder,
-    path : (folder === '/' ? '' : folder) + '/' + name,
-    basename : path.basename(name, extension),
+    path: (folder === '/' ? '' : folder) + '/' + name,
+    basename: path.basename(name, extension),
     extension,
     type,
     hash,
-    modified : (await fs.stat(fullPath)).mtime
+    modified: (await fs.stat(fullPath)).mtime
   };
 }
 
@@ -175,21 +198,21 @@ async function getKbFileInfo(root : string, file : string) : Promise<File|null> 
  * @param {string} rootFolder The root folder the of the knowledge base.
  * @param {string} folder Relative path of the knowledge base subfolder. Optional.
  */
-async function* findKbFiles(rootFolder : string, folder? : string) : AsyncGenerator<File> {
-  const folderFullPath = path.join(rootFolder, folder || '');
+async function* findKbFiles(log: Log, kb: KnowledgeBase, folder?: string): AsyncGenerator<File> {
+  const folderFullPath = path.join(kb.root, folder || '');
 
   for await (const item of await fs.readdir(folderFullPath)) {
     // item is a folder or file name with extension
 
     const itemRelativePath = path.join(folder || '', item);
-    const itemFullPath = path.join(rootFolder, itemRelativePath);
+    const itemFullPath = path.join(kb.root, itemRelativePath);
 
     const st = await fs.stat(itemFullPath);
 
     if (st.isDirectory()) {
-      yield* findKbFiles(rootFolder, itemRelativePath);
+      yield* findKbFiles(log, kb, itemRelativePath);
     } else {
-      const fileInfo = await getKbFileInfo(rootFolder, itemFullPath);
+      const fileInfo = await getKbFileInfo(log, kb, itemFullPath);
       if (fileInfo !== null) {
         yield fileInfo;
       }
@@ -198,34 +221,34 @@ async function* findKbFiles(rootFolder : string, folder? : string) : AsyncGenera
 }
 
 /** Try to update file in the knowledge base. */
-async function tryUpdateKbFile(kb : any, itemFullPath : string) {
+async function tryUpdateKbFile(log: Log, kb: KnowledgeBase, itemFullPath: string) {
   const st = await fs.stat(itemFullPath);
 
   if (st.isDirectory()) {
-    return { };
+    return {};
   }
 
-  const existingFile = kb.files.filter((file : any) => file.fullPath === itemFullPath)[0] || null;
+  const existingFile = kb.files.find((file: any) => file.fullPath === itemFullPath);
 
-  const newFile = await getKbFileInfo(kb.root, itemFullPath);
+  const newFile = await getKbFileInfo(log, kb, itemFullPath);
   if (newFile === null) {
-    return { };
+    return { excluded: true };
   }
 
-  if (existingFile === null) {
+  if (!existingFile) {
     kb.files.push(newFile);
-    return { added : newFile };
+    return { added: newFile };
   }
 
   if (existingFile.modified !== newFile.modified) {
     kb.files[kb.files.indexOf(existingFile)] = newFile;
-    return { updated : newFile, previous : existingFile };
+    return { updated: newFile, previous: existingFile };
   }
 
-  return { };
+  return {};
 }
 
-async function addKb(log : Log, root : string) : Promise<any> {
+async function addKb(log: Log, root: string, exclude: any): Promise<any> {
   log(`Adding knowledge base: ${root}`);
 
   const existing = knowledgeBases.find(kb => kb.root === root);
@@ -234,10 +257,12 @@ async function addKb(log : Log, root : string) : Promise<any> {
     return;
   }
 
-  const kb : KnowledgeBase = { root, files : [] };
+  const kb: KnowledgeBase = { root, exclude, files: [] };
   knowledgeBases.push(kb);
 
-  for await (const file of findKbFiles(kb.root)) {
+  log(`Looking for files in the folder ${root} excluding ${JSON.stringify(exclude)}.`);
+
+  for await (const file of findKbFiles(log, kb)) {
     kb.files.push(file);
   }
 
@@ -245,8 +270,8 @@ async function addKb(log : Log, root : string) : Promise<any> {
 
   const ac = new AbortController();
   kbFilesystemWatchers.push({
-    root : kb.root,
-    dispose : () => {
+    root: kb.root,
+    dispose: () => {
       log(`Stopping monitoring knowledge base: ${kb.root}`);
       ac.abort();
     }
@@ -257,14 +282,14 @@ async function addKb(log : Log, root : string) : Promise<any> {
     log(`Starting monitoring knowledge base: ${kb.root}`);
 
     try {
-      const watcher = fs.watch(kb.root, { recursive : true, signal : ac.signal });
+      const watcher = fs.watch(kb.root, { recursive: true, signal: ac.signal });
 
       for await (const event of watcher) {
         if (event.filename === null) {
           continue;
         }
 
-        log(`Received event: ${event.eventType} ${event.filename}`);
+        //log(`Received event: ${event.eventType} ${event.filename}`);
 
         const itemFullName = path.join(kb.root, event.filename);
         const st = await fs.stat(itemFullName);
@@ -272,13 +297,18 @@ async function addKb(log : Log, root : string) : Promise<any> {
           continue;
         }
 
-        const result = await tryUpdateKbFile(kb, itemFullName);
+        const result = await tryUpdateKbFile(log, kb, itemFullName);
+        if (result.excluded) {
+          //log(`Excluded the file ${event.filename}`);
+          continue;
+        }
         if (result.added) {
           const file = result.added;
           if (file.type === 'markdown') {
             log(`Indexing the file ${file.path}.`);
             await addFileToSearchIndex(file);
           }
+          continue;
         }
         if (result.updated) {
           const file = result.updated;
@@ -286,9 +316,10 @@ async function addKb(log : Log, root : string) : Promise<any> {
             log(`Re-indexing the file ${file.path}.`);
             await replaceFileInSearchIndex(file);
           }
+          continue;
         }
       }
-    } catch (err : any) {
+    } catch (err: any) {
       if (err && err.name === 'AbortError') {
         log(`Stopped monitoring knowledge base: ${kb.root}`);
         return;
@@ -319,7 +350,7 @@ async function addKb(log : Log, root : string) : Promise<any> {
   return { kb, indexed, failures };
 }
 
-async function removeKb(log : Log, root : string) {
+async function removeKb(log: Log, root: string) {
   const watcher = kbFilesystemWatchers.find(item => item.root === root);
   if (watcher) {
     watcher.dispose();
@@ -337,14 +368,23 @@ async function removeKb(log : Log, root : string) {
   }
 }
 
+async function removeAllKbs(log: Log) {
+  log(`Removing all knowledge bases.`);
+
+  while (knowledgeBases.length > 0) {
+    await removeKb(log, knowledgeBases[0].root);
+  }
+}
+
+
 // This method is called when the extension is activated
-export function activate(context : vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) {
 
   // create and show the output channel
   const outputChannel = vscode.window.createOutputChannel(EXTENSION_NAME);
   outputChannel.show();
 
-  const log : Log =
+  const log: Log =
     message => outputChannel.appendLine(message);
 
   outputChannel.appendLine(`The extension "${EXTENSION_NAME}" (${EXTENSION_ID}) is now active.`);
@@ -356,14 +396,14 @@ export function activate(context : vscode.ExtensionContext) {
       const results =
         miniSearch.search(
           value,
-          { fuzzy: 0.2, boost: { title : 2 } });
+          { fuzzy: 0.2, boost: { title: 2 } });
 
       quickPick.items = results.map(item => {
         return {
           alwaysShow: true,
-          label : item.path,
-          description : 'matches ' + item.terms.map(item => `'${item}'`).join(', '),
-          detail : item.id
+          label: item.path,
+          description: 'matches ' + item.terms.map(item => `'${item}'`).join(', '),
+          detail: item.id
         };
       });
     });
@@ -432,16 +472,33 @@ export function activate(context : vscode.ExtensionContext) {
 
   const workspaceFolders = vscode.workspace.workspaceFolders;
   for (const workspaceFolder of workspaceFolders || []) {
-    addKb(log, workspaceFolder.uri.fsPath);
+    const configuration = vscode.workspace.getConfiguration(undefined, workspaceFolder.uri);
+    const filesExclude = configuration.get('files.exclude');
+    addKb(log, workspaceFolder.uri.fsPath, filesExclude as any);
   }
 
-  vscode.workspace.onDidChangeWorkspaceFolders(event => {
+  vscode.workspace.onDidChangeWorkspaceFolders(async event => {
     for (const folder of event.removed || []) {
-      removeKb(log, folder.uri.fsPath);
+      await removeKb(log, folder.uri.fsPath);
     }
 
     for (const folder of event.added || []) {
-      addKb(log, folder.uri.fsPath);
+      const configuration = vscode.workspace.getConfiguration(undefined, folder.uri);
+      const filesExclude = configuration.get('files.exclude');
+      addKb(log, folder.uri.fsPath, filesExclude as any);
+    }
+  });
+
+  vscode.workspace.onDidChangeConfiguration(async event => {
+    if (event.affectsConfiguration('files.exclude')) {
+      await removeAllKbs(log);
+
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      for (const workspaceFolder of workspaceFolders || []) {
+        const configuration = vscode.workspace.getConfiguration(undefined, workspaceFolder.uri);
+        const filesExclude = configuration.get('files.exclude');
+        await addKb(log, workspaceFolder.uri.fsPath, filesExclude as any);
+      }
     }
   });
 }
