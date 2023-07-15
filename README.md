@@ -21,28 +21,6 @@ The command `Search in Markdown files` will open a search box where you can ente
 
 The command `Add link from search results` will open a search box where you can enter the text you want to search for. Clicking or pressing Enter on the search result will add a link to the corresponding file in the editor. The selected text becomes a link's title.
 
-## Release Notes
+## Releases
 
-### 0.1.4
-
-- Addded configuration for debug level logging.
-- Pack the extension with eslint
-
-### 0.1.3
-
-- Respect the `search.exclude` setting.
-- Fix a bug where the search index was not updated when files were deleted.
-- Fix a bug where the deleted file still appeared in the search results.
-
-### 0.1.2
-
-- Respect the `files.exclude` setting.
-
-### 0.1.1
-
-- Add support for adding links from the search results.
-- Add filesystem watcher to update search index when files are added, or changed.
-
-### 0.1.0
-
-- Initial release of Markdown Full Text Search.
+See the [CHANGELOG](CHANGELOG) for the details about the changes in each release.
