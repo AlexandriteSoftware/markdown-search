@@ -1,11 +1,12 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { Exclusions, KnowledgeBase, kbFileFilter } from '../../extension';
+import { createLogger, transports, Logger } from 'winston';
 
 suite('kbFileFilter Test Suite', () => {
   vscode.window.showInformationMessage('Start kbFileFilter Test Suite.');
 
-  const log = (message: string) => console.log(message);
+  const log = createLogger({ transports: [new transports.Console()] });
 
   test('kbFileFilter filters out files as expected', () => {
     const exclude: Exclusions = {};
