@@ -25,8 +25,8 @@ The command `Add link from search results` will open a search box where you can 
 
 ### 0.1.4
 
-log to debug
-<https://code.visualstudio.com/api/working-with-extensions/bundling-extension>
+- Addded configuration for debug level logging.
+- Pack the extension with eslint
 
 ### 0.1.3
 

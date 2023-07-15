@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as fsp from 'fs/promises';
 import * as path from 'path';
-import * as crypto from 'crypto';
 import * as vscode from 'vscode';
 import * as MiniSearch from 'minisearch';
 import * as minimatch from 'minimatch';
@@ -11,6 +10,24 @@ import * as Transport from 'winston-transport';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
+
+const loggingLevel = (() => {
+  const configuration = vscode.workspace.getConfiguration();
+  const loggingLevel = configuration.get('markdown-search.logging.level') as string;
+  switch (loggingLevel) {
+    case 'emerg':
+    case 'alert':
+    case 'crit':
+    case 'error':
+    case 'warning':
+    case 'notice':
+    case 'info':
+    case 'debug':
+      return loggingLevel;
+    default:
+      return 'info';
+  }
+})();
 
 class OutputChannelTransport extends Transport {
   outputChannel: vscode.OutputChannel | null = null;
@@ -28,11 +45,10 @@ class OutputChannelTransport extends Transport {
 const outputChannelTransport = new OutputChannelTransport();
 
 const logger = createLogger({
-  level: 'info',
+  level: loggingLevel,
   format: format.simple(),
   transports: [outputChannelTransport]
 });
-
 
 export type Exclusions = { [key: string]: boolean };
 
@@ -56,9 +72,6 @@ export interface File {
 
   /** The file's type, `markdown` or `other`. */
   type: string;
-
-  /** When the file's type is `markdown`, contains sha1 hash of the content.  */
-  hash: string | null;
 
   /** Modification datetime of the file, as returned by the filesystem. */
   modified: Date;
@@ -205,7 +218,7 @@ export function kbFileFilter(log: Logger, kb: KnowledgeBase, file: string): bool
  * @param {string} root Path to the knowledge base root folder.
  * @param {string} file Path to the knowledge base file.
  */
-async function getKbFileInfo(log: Logger, kb: KnowledgeBase, file: string): Promise<File | null> {
+async function getKbFileInfo(log: Logger, kb: KnowledgeBase, file: string, modified: Date): Promise<File | null> {
   if (!kbFileFilter(log, kb, file)) {
     return null;
   }
@@ -223,21 +236,6 @@ async function getKbFileInfo(log: Logger, kb: KnowledgeBase, file: string): Prom
     type = 'markdown';
   }
 
-  let hash = null;
-  if (type === 'markdown') {
-    const content = await readFile(log, fullPath);
-    if (content === null) {
-      return null;
-    }
-
-    hash = crypto.createHash('sha1').update(content).digest('hex');
-  }
-
-  const st = await stat(log, fullPath);
-  if (st === null) {
-    return null;
-  }
-
   return {
     fullPath,
     folder,
@@ -245,8 +243,7 @@ async function getKbFileInfo(log: Logger, kb: KnowledgeBase, file: string): Prom
     basename: path.basename(name, extension),
     extension,
     type,
-    hash,
-    modified: st.mtime
+    modified
   };
 }
 
@@ -267,6 +264,8 @@ async function* findKbFiles(log: Logger, kb: KnowledgeBase, folder?: string): As
     return;
   }
 
+  log.debug(`findKbFiles: ${folderFullPath} -> ${JSON.stringify(files)}`);
+
   for await (const item of files) {
     // item is a folder or file name with extension
 
@@ -282,7 +281,7 @@ async function* findKbFiles(log: Logger, kb: KnowledgeBase, folder?: string): As
     if (st.isDirectory()) {
       yield* findKbFiles(log, kb, itemRelativePath);
     } else {
-      const fileInfo = await getKbFileInfo(log, kb, itemFullPath);
+      const fileInfo = await getKbFileInfo(log, kb, itemFullPath, st.mtime);
       if (fileInfo !== null) {
         yield fileInfo;
       }
@@ -299,7 +298,7 @@ async function tryUpdateKbFile(log: Logger, kb: KnowledgeBase, itemFullPath: str
 
   const existingFile = kb.files.find((file: any) => file.fullPath === itemFullPath);
 
-  const newFile = await getKbFileInfo(log, kb, itemFullPath);
+  const newFile = await getKbFileInfo(log, kb, itemFullPath, st.mtime);
   if (newFile === null) {
     return { excluded: true };
   }
