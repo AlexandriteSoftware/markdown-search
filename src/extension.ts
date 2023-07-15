@@ -1,12 +1,12 @@
-import * as fs from 'fs';
-import * as fsp from 'fs/promises';
-import * as path from 'path';
-import * as vscode from 'vscode';
-import * as MiniSearch from 'minisearch';
-import * as minimatch from 'minimatch';
+import fs from 'fs';
+import fsp from 'fs/promises';
+import path from 'path';
+import vscode from 'vscode';
+import MiniSearch from 'minisearch';
+import minimatch from 'minimatch';
 import { wsEvents } from './wsEvents';
 import { createLogger, format, Logger } from 'winston';
-import * as Transport from 'winston-transport';
+import Transport from 'winston-transport';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
@@ -103,8 +103,7 @@ const knowledgeBases: KnowledgeBase[] = [];
 const kbFilesystemWatchers: KnowledgeBaseFilesystemWatcher[] = [];
 
 // typescript definition for minisearch is a bit scratchy
-const miniSearchClass = MiniSearch as any;
-const miniSearch: MiniSearch.default = new miniSearchClass({
+const miniSearch = new MiniSearch({
   fields: ['title', 'text'],
   storeFields: ['title', 'path']
 });

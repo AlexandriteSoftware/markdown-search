@@ -1,7 +1,7 @@
-import * as assert from 'assert';
-import * as vscode from 'vscode';
+import assert from 'assert';
+import vscode from 'vscode';
 import { Exclusions, KnowledgeBase, kbFileFilter } from '../../extension';
-import { createLogger, transports, Logger } from 'winston';
+import { createLogger, transports } from 'winston';
 
 suite('kbFileFilter Test Suite', () => {
   vscode.window.showInformationMessage('Start kbFileFilter Test Suite.');
