@@ -23,6 +23,11 @@ The command `Add link from search results` will open a search box where you can 
 
 ## Release Notes
 
+### 0.1.4
+
+log to debug
+<https://code.visualstudio.com/api/working-with-extensions/bundling-extension>
+
 ### 0.1.3
 
 - Respect the `search.exclude` setting.

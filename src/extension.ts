@@ -28,7 +28,7 @@ class OutputChannelTransport extends Transport {
 const outputChannelTransport = new OutputChannelTransport();
 
 const logger = createLogger({
-  level: 'debug',
+  level: 'info',
   format: format.simple(),
   transports: [outputChannelTransport]
 });
