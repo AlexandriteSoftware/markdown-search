@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { createLogger, Logger } from 'winston';
+import { AsyncIterableQueue } from './AsyncIterableQueue';
 
 interface IWorkspaceEvent {
   action: 'added' | 'removed';
@@ -15,21 +16,18 @@ interface IWorkspaceEvent {
  * Creates disposable asynchronous iterator of the workspace events, e.g.
  * adding folder, removing folder, changing configuration.
  */
-export const createWorkspaceEventsIterator = ((log? : Logger) => {
+export const createWorkspaceEventsIterator = ((log? : Logger) : AsyncIterableQueue<IWorkspaceEvent> => {
   log = log || createLogger();
 
-  const values: IWorkspaceEvent[] = [];
-  const resolves: ((value: IteratorResult<IWorkspaceEvent>) => void)[] = [];
+  const disposables : (() => void)[] = [];
 
-  const submit = (e: IWorkspaceEvent) => {
-    if (resolves.length === 0) {
-      values.push(e);
-      return;
+  const dispose = () => {
+    for (const dispose of disposables) {
+      dispose();
     }
-
-    let resolve = resolves.shift() || (() => { });
-    resolve({ done: false, value: e });
   };
+
+  const iterator = new AsyncIterableQueue<IWorkspaceEvent>(dispose);
 
   const addFolder = (folder: vscode.Uri) => {
     log?.debug(`addFolder: ${folder.fsPath}`);
@@ -37,13 +35,13 @@ export const createWorkspaceEventsIterator = ((log? : Logger) => {
     const configuration = vscode.workspace.getConfiguration(undefined, folder);
     const filesExclude = configuration.get('files.exclude') as { [key: string]: boolean };
     const searchExclude = configuration.get('search.exclude') as { [key: string]: boolean };
-    submit({ action : 'added', folder : folder.fsPath, exclude: Object.assign({}, filesExclude, searchExclude) });
+    iterator.enqueue({ action : 'added', folder : folder.fsPath, exclude: Object.assign({}, filesExclude, searchExclude) });
   };
 
   const removeFolder = (folder: vscode.Uri) => {
     log?.debug(`removeFolder: ${folder.fsPath}`);
 
-    submit({ action: 'removed', folder: folder.fsPath });
+    iterator.enqueue({ action: 'removed', folder: folder.fsPath });
   };
 
   const onDidChangeConfigurationSubscriber =
@@ -58,6 +56,7 @@ export const createWorkspaceEventsIterator = ((log? : Logger) => {
         }
       }
     });
+  disposables.push(() => onDidChangeConfigurationSubscriber.dispose());
 
   const onDidChangeWorkspaceFoldersSubscriber =
     vscode.workspace.onDidChangeWorkspaceFolders(event => {
@@ -71,33 +70,12 @@ export const createWorkspaceEventsIterator = ((log? : Logger) => {
         addFolder(folder.uri);
       }
     });
+  disposables.push(() => onDidChangeWorkspaceFoldersSubscriber.dispose());
 
   const workspaceFolders = vscode.workspace.workspaceFolders;
   for (const folder of workspaceFolders || []) {
     addFolder(folder.uri);
   }
 
-  return {
-    [Symbol.asyncIterator]: () => {
-      return {
-        next: (): Promise<IteratorResult<IWorkspaceEvent>> => {
-          if (values.length === 0) {
-            return new Promise<IteratorResult<IWorkspaceEvent>>(resolve => resolves.push(resolve));
-          }
-
-          const value = values.shift() as IWorkspaceEvent;
-          return Promise.resolve<IteratorResult<IWorkspaceEvent>>({ done: false, value });
-        }
-      };
-    },
-    dispose: () => {
-      onDidChangeConfigurationSubscriber.dispose();
-      onDidChangeWorkspaceFoldersSubscriber.dispose();
-
-      while (resolves.length > 0) {
-        const resolve = resolves.shift() || (() => { });
-        resolve({ done: true, value: undefined });
-      }
-    }
-  };
+  return iterator;
 });

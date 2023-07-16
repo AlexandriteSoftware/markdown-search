@@ -5,28 +5,10 @@ import Transport from 'winston-transport';
 import { IKnowledgeBase, KnowledgeBase } from './KnowledgeBase';
 import { createWorkspaceEventsIterator } from './WorkspaceEvents';
 import { createKbFilesystemSync, IKbFilesystemSync } from './KbFilesystemSync';
-import { createMiniSearchSync, IMiniSearchSync } from './MiniSearchSync';
+import { createMiniSearchSync, createMiniSearchEventQueue, IMiniSearchSync } from './MiniSearchSync';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
-
-const loggingLevel = (() => {
-  const configuration = vscode.workspace.getConfiguration();
-  const loggingLevel = configuration.get('markdown-search.logging.level') as string;
-  switch (loggingLevel) {
-    case 'emerg':
-    case 'alert':
-    case 'crit':
-    case 'error':
-    case 'warning':
-    case 'notice':
-    case 'info':
-    case 'debug':
-      return loggingLevel;
-    default:
-      return 'info';
-  }
-})();
 
 class OutputChannelTransport extends Transport {
   outputChannel: vscode.OutputChannel | null = null;
@@ -41,18 +23,43 @@ class OutputChannelTransport extends Transport {
   }
 }
 
-const outputChannelTransport = new OutputChannelTransport();
+let outputChannelTransport :  OutputChannelTransport | null = null;
 
-const logger = createLogger({
-  level: loggingLevel,
-  format: format.simple(),
-  transports: [outputChannelTransport]
-});
+const loggerOptions = (() => {
+  const configuration = vscode.workspace.getConfiguration();
+  const loggingLevel = configuration.get('markdown-search.logging.level') as string;
+  if (loggingLevel === 'none') {
+    return { silent: true };
+  }
+  let readLoggingLevel = 'info';
+  switch (loggingLevel) {
+    case 'emerg':
+    case 'alert':
+    case 'crit':
+    case 'error':
+    case 'warning':
+    case 'notice':
+    case 'info':
+    case 'debug':
+      readLoggingLevel = loggingLevel;
+      break;
+  }
+  outputChannelTransport = new OutputChannelTransport();
+  return {
+    level: readLoggingLevel,
+    format: format.simple(),
+    transports: [outputChannelTransport]
+  };
+})();
+
+const logger = createLogger(loggerOptions);
 
 const miniSearch = new MiniSearch({
   fields: ['title', 'text'],
   storeFields: ['title', 'path']
 });
+
+const miniSearchQueue = createMiniSearchEventQueue(logger, miniSearch);
 
 /** The list of loaded knowledge bases. Each corresponds to the workspace's folder. */
 const knowledgeBases: IKnowledgeBase[] = [];
@@ -62,7 +69,7 @@ const knowledgeBases: IKnowledgeBase[] = [];
 export const kbFsSyncs: IKbFilesystemSync[] = [];
 
 /** The list of search index watchers. Each corresponds to the workspace's folder. */
-export const kbSearchIndexSyncs : IMiniSearchSync[] = [];
+export const kbSearchIndexSyncs: IMiniSearchSync[] = [];
 
 export async function addKb(log: Logger, root: string, exclude: any): Promise<IKnowledgeBase | null> {
   log.info(`Adding knowledge base: ${root}`);
@@ -79,7 +86,7 @@ export async function addKb(log: Logger, root: string, exclude: any): Promise<IK
   const sync = await createKbFilesystemSync(log, kb);
   kbFsSyncs.push(sync);
 
-  const indexSync = await createMiniSearchSync(log, miniSearch, kb);
+  const indexSync = await createMiniSearchSync(log, miniSearchQueue, kb);
   kbSearchIndexSyncs.push(indexSync);
 
   return kb;
@@ -110,10 +117,12 @@ export async function removeKb(log: Logger, root: string): Promise<IKnowledgeBas
 
 // This method is called when the extension is activated
 export function activate(context: vscode.ExtensionContext) {
-  // create and show the output channel
-  const outputChannel = vscode.window.createOutputChannel(EXTENSION_NAME);
-  outputChannel.show();
-  outputChannelTransport.updateOutputChannel(outputChannel);
+  if (outputChannelTransport !== null) {
+    // create and show the output channel
+    const outputChannel = vscode.window.createOutputChannel(EXTENSION_NAME);
+    outputChannel.show();
+    outputChannelTransport.updateOutputChannel(outputChannel);
+  }
 
   logger.info(`The extension "${EXTENSION_NAME}" (${EXTENSION_ID}) is now active.`);
 

@@ -30,7 +30,7 @@ export async function* findKbFiles(log: Logger, kb: IKnowledgeBase, path?: strin
 
   const st = await stat(fullPath);
   if (st === null) {
-    log.debug(`Failed to stat ${fullPath}.`);
+    log.debug(`findKbFiles: failed to stat "${fullPath}".`);
     return;
   }
 
@@ -47,16 +47,16 @@ export async function* findKbFiles(log: Logger, kb: IKnowledgeBase, path?: strin
   try {
     all.push(...await fsp.readdir(fullPath));
   } catch {
-    log.info(`Failed to read the folder ${fullPath}.`);
+    log.info(`findKbFiles: failed to read the folder "${fullPath}".`);
     return;
   }
 
-  log.debug(`findKbFiles: ${fullPath} all: ${JSON.stringify(all)}`);
+  log.debug(`findKbFiles: "${fullPath}" all: ${JSON.stringify(all)}`);
 
   const filtered =
     all.filter(item => kb.isAccepted(modules.path.join(fullPath, item)));
 
-  log.debug(`findKbFiles: ${fullPath} filtered: ${JSON.stringify(filtered)}`);
+  log.debug(`findKbFiles: "${fullPath}" filtered: ${JSON.stringify(filtered)}`);
 
   for await (const item of filtered) {
     // item is a folder or file name with extension
@@ -67,7 +67,7 @@ export async function* findKbFiles(log: Logger, kb: IKnowledgeBase, path?: strin
     const st = await stat(itemFullPath);
 
     if (st === null) {
-      log.debug(`Failed to stat ${fullPath}.`);
+      log.debug(`findKbFiles: failed to stat "${fullPath}".`);
       continue;
     }
 
@@ -89,42 +89,45 @@ export async function createKbFilesystemSync(log: Logger, kb: IKnowledgeBase): P
   }
   kb.addFiles(files);
 
-  log.info(`Added ${files.length} files to the knowledge base.`);
+  log.info(`KbFilesystemSync: added ${files.length} files to the knowledge base.`);
 
   const ac = new AbortController();
 
   const sync : IKbFilesystemSync = {
     kb,
     dispose: () => {
-      log.info(`Stopping monitoring knowledge base: ${kb.root}`);
+      log.info(`KbFilesystemSync: stopping monitoring "${kb.root}".`);
       ac.abort();
     }
   };
 
   // event-based filesystem monitoring
   (async () => {
-    log.info(`Starting monitoring knowledge base: ${kb.root}`);
+    log.info(`Watcher: starting monitoring "${kb.root}".`);
 
     try {
       const watcher = fsp.watch(kb.root, { recursive: true, signal: ac.signal });
 
       for await (const event of watcher) {
-        log.debug(`Received event: ${JSON.stringify(event)}`);
+        if (event === null || event === undefined) {
+          log.debug(`Watcher: skipping, event is empty.`);
+          continue;
+        }
 
         const filename = event.filename;
 
         if (filename === undefined || filename === null || filename === '') {
-          log.debug(`Event's filename is not set, skipping.`);
+          log.debug(`Watcher: skipping, event filename is empty, event is ${JSON.stringify(event)}.`);
           continue;
         }
 
         const itemFullName = path.join(kb.root, filename);
         if (!kb.isAccepted(itemFullName)) {
-          log.debug(`The path ${itemFullName} is excluded, skipping.`);
+          log.debug(`Watcher: skipping, event path "${itemFullName}" is excluded, event is ${JSON.stringify(event)}.`);
           continue;
         }
 
-        log.debug(`The file or folder ${itemFullName} was changed, removing and adding its files.`);
+        log.debug(`Watcher: the file or folder "${itemFullName}" was changed, removing and adding its files, event is ${JSON.stringify(event)}.`);
 
         const existing = kb.filesWithFilesystemPath(itemFullName);
         kb.removeFiles(existing);
@@ -137,7 +140,7 @@ export async function createKbFilesystemSync(log: Logger, kb: IKnowledgeBase): P
       }
     } catch (err: any) {
       if (err && err.name === 'AbortError') {
-        log.info(`Stopped monitoring knowledge base: ${kb.root}`);
+        log.info(`Watcher: stopped monitoring "${kb.root}".`);
         return;
       }
       throw err;

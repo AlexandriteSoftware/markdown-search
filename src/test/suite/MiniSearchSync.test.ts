@@ -2,8 +2,9 @@ import assert from 'assert';
 import vscode from 'vscode';
 import MiniSearch from 'minisearch';
 import { IKnowledgeBase, KnowledgeBase, IFile } from '../../KnowledgeBase';
-import { createMiniSearchSync } from '../../MiniSearchSync';
+import { createMiniSearchSync, createMiniSearchEventQueue } from '../../MiniSearchSync';
 import { createLogger } from 'winston';
+import { waitFor } from '../helpers';
 
 suite('MiniSearchSync Tests', () => {
   vscode.window.showInformationMessage('Start MiniSearchSync Tests');
@@ -33,24 +34,22 @@ suite('MiniSearchSync Tests', () => {
       storeFields: ['title', 'path']
     });
 
+    const queue = createMiniSearchEventQueue(logger, miniSearch);
+
     const kb = new KnowledgeBase('c:\\projects\\kb');
 
-    const sync = await createMiniSearchSync(logger, miniSearch, kb);
+    const sync = await createMiniSearchSync(logger, queue, kb);
 
     const file1 = createTestFile(kb, '/test.md', 'test');
 
     kb.addFiles([file1]);
-    await sync.busy();
-
-    assert.strictEqual(miniSearch.search('test').length, 1);
+    await waitFor(() => miniSearch.search('test').length === 1, 1000);
 
     kb.removeFiles([file1]);
-    await sync.busy();
-    assert.strictEqual(miniSearch.search('test').length, 0);
+    await waitFor(() => miniSearch.search('test').length === 0, 1000);
 
     kb.addFiles([file1]);
-    await sync.busy();
-    assert.strictEqual(miniSearch.search('test').length, 1);
+    await waitFor(() => miniSearch.search('test').length === 1, 1000);
 
     sync.dispose();
   });

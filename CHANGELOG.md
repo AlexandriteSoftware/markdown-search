@@ -4,6 +4,14 @@ All notable changes to the extension will be documented in this file.
 
 This file is organised according to [Keep a Changelog](http://keepachangelog.com/).
 
+## Unreleased
+
+- Added `none` log level
+
+## 0.1.7
+
+- Refactor internal code to use async queues to fix concurrent index updates.
+
 ## 0.1.6
 
 - Fix: renaming a folder does not update the search index.

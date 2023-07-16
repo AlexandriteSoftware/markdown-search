@@ -4,38 +4,14 @@ import vscode from 'vscode';
 import os from 'os';
 import fs from 'fs/promises';
 import { KnowledgeBase } from '../../KnowledgeBase';
-import { createLogger, transports } from 'winston';
+import { createLogger } from 'winston';
 import { createKbFilesystemSync } from '../../KbFilesystemSync';
+import { waitFor } from '../helpers';
 
 suite('KbFilesystemSync Tests', () => {
   vscode.window.showInformationMessage('Start KbFilesystemSync Tests');
 
   const logger = createLogger({ silent: true });
-
-  const waitFor: (predicate: () => boolean, timeout: number) => Promise<void> =
-    (predicate, timeout) => {
-      const start = Date.now();
-      return new Promise((resolve, reject) => {
-        let interval: NodeJS.Timer | null = null;
-        interval = setInterval(() => {
-          if (Date.now() - start > timeout) {
-            if (interval !== null) {
-              clearInterval(interval);
-            }
-            reject(new Error('Timeout'));
-            return;
-          }
-
-          if (predicate()) {
-            if (interval !== null) {
-              clearInterval(interval);
-            }
-            resolve();
-          }
-        }, 20);
-      });
-    };
-
   test('syncs kb files with filesystem', async () => {
     const tmpPathBase = path.join(os.tmpdir(), 'test-');
     const tmpFolder = await fs.mkdtemp(tmpPathBase);

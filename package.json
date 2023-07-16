@@ -4,7 +4,7 @@
   "description": "Markdown Full Text Search makes it easy to search for text in Markdown files. With this extension, you can quickly find the text you're looking for and link it.",
   "publisher": "AlexandriteSoftware",
   "preview": true,
-  "version": "0.1.6",
+  "version": "0.1.8",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -44,10 +44,11 @@
             "error",
             "crit",
             "alert",
-            "emerg"
+            "emerg",
+            "none"
           ],
           "scope": "window",
-          "description": " RFC5424 logging level: debug, info, notice, warning, error, crit, alert, emerg. Requires restart."
+          "description": " none, or RFC5424 logging level: debug, info, notice, warning, error, crit, alert, emerg. Requires restart."
         }
       }
     }
