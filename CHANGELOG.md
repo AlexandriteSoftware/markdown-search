@@ -4,9 +4,10 @@ All notable changes to the extension will be documented in this file.
 
 This file is organised according to [Keep a Changelog](http://keepachangelog.com/).
 
-## Unreleased
+## 0.1.8
 
 - Added `none` log level
+- Set search keyswords from the selected text
 
 ## 0.1.7
 

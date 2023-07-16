@@ -145,6 +145,22 @@ export function activate(context: vscode.ExtensionContext) {
       });
     });
 
+    try {
+      const editor = vscode.window.activeTextEditor;
+      if (editor) {
+        const selections = editor.selections;
+        if (selections.length > 0) {
+          const selection = selections.at(0);
+          const text = editor.document.getText(selection);
+          if (text !== '') {
+            quickPick.value = text.replace(/[\r\n]+/g, ' ');
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn('Failed to get the active text editor. ' + (e || '').toString());
+    }
+
     return quickPick;
   }
 
