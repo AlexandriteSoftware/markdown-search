@@ -2,12 +2,20 @@ import * as vscode from 'vscode';
 import { createLogger, Logger } from 'winston';
 
 interface IWorkspaceEvent {
-  action: string;
+  action: 'added' | 'removed';
+
+  /** An absolute path to the filesystem folder. */
   folder: string;
+
+  /** The exclude patterns for the folder. */
   exclude?: { [key: string]: boolean };
 }
 
-export const wsEvents = ((log? : Logger) => {
+/**
+ * Creates disposable asynchronous iterator of the workspace events, e.g.
+ * adding folder, removing folder, changing configuration.
+ */
+export const createWorkspaceEventsIterator = ((log? : Logger) => {
   log = log || createLogger();
 
   const values: IWorkspaceEvent[] = [];
@@ -38,29 +46,31 @@ export const wsEvents = ((log? : Logger) => {
     submit({ action: 'removed', folder: folder.fsPath });
   };
 
-  vscode.workspace.onDidChangeConfiguration(event => {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    for (const folder of workspaceFolders || []) {
-      const filesExcludeChanged = event.affectsConfiguration('files.exclude', folder);
-      const searchExcludeChanged = event.affectsConfiguration('search.exclude', folder);
-      if (filesExcludeChanged || searchExcludeChanged) {
+  const onDidChangeConfigurationSubscriber =
+    vscode.workspace.onDidChangeConfiguration(event => {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      for (const folder of workspaceFolders || []) {
+        const filesExcludeChanged = event.affectsConfiguration('files.exclude', folder);
+        const searchExcludeChanged = event.affectsConfiguration('search.exclude', folder);
+        if (filesExcludeChanged || searchExcludeChanged) {
+          removeFolder(folder.uri);
+          addFolder(folder.uri);
+        }
+      }
+    });
+
+  const onDidChangeWorkspaceFoldersSubscriber =
+    vscode.workspace.onDidChangeWorkspaceFolders(event => {
+      log?.debug(`onDidChangeWorkspaceFolders: ${JSON.stringify(event)}`);
+
+      for (const folder of event.removed || []) {
         removeFolder(folder.uri);
+      }
+
+      for (const folder of event.added || []) {
         addFolder(folder.uri);
       }
-    }
-  });
-
-  vscode.workspace.onDidChangeWorkspaceFolders(event => {
-    log?.debug(`onDidChangeWorkspaceFolders: ${JSON.stringify(event)}`);
-
-    for (const folder of event.removed || []) {
-      removeFolder(folder.uri);
-    }
-
-    for (const folder of event.added || []) {
-      addFolder(folder.uri);
-    }
-  });
+    });
 
   const workspaceFolders = vscode.workspace.workspaceFolders;
   for (const folder of workspaceFolders || []) {
@@ -81,6 +91,9 @@ export const wsEvents = ((log? : Logger) => {
       };
     },
     dispose: () => {
+      onDidChangeConfigurationSubscriber.dispose();
+      onDidChangeWorkspaceFoldersSubscriber.dispose();
+
       while (resolves.length > 0) {
         const resolve = resolves.shift() || (() => { });
         resolve({ done: true, value: undefined });

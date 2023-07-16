@@ -1,12 +1,11 @@
-import fs from 'fs';
-import fsp from 'fs/promises';
-import path from 'path';
 import vscode from 'vscode';
 import MiniSearch from 'minisearch';
-import minimatch from 'minimatch';
-import { wsEvents } from './wsEvents';
 import { createLogger, format, Logger } from 'winston';
 import Transport from 'winston-transport';
+import { IKnowledgeBase, KnowledgeBase } from './KnowledgeBase';
+import { createWorkspaceEventsIterator } from './WorkspaceEvents';
+import { createKbFilesystemSync, IKbFilesystemSync } from './KbFilesystemSync';
+import { createMiniSearchSync, IMiniSearchSync } from './MiniSearchSync';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
@@ -50,412 +49,63 @@ const logger = createLogger({
   transports: [outputChannelTransport]
 });
 
-export type Exclusions = { [key: string]: boolean };
-
-/** Represents a file in the knowledge base */
-export interface File {
-
-  /** Full (absolute) path to the file, e.g. `c:\kb\project\readme.md`. */
-  fullPath: string;
-
-  /** Absolute path to the file's folder from the workspace folder, e.g. `/project`. */
-  folder: string;
-
-  /** Absolute path to the file from the workspace folder, e.g. `/project/readme.md`. */
-  path: string;
-
-  /** The file's name without extension, e.g. `readme`. */
-  basename: string;
-
-  /** The file's extension, e.g. `.md`. */
-  extension: string;
-
-  /** The file's type, `markdown` or `other`. */
-  type: string;
-
-  /** Modification datetime of the file, as returned by the filesystem. */
-  modified: Date;
-}
-
-/** Represents a knowldge base, which is a folder with markdown files. */
-export interface KnowledgeBase {
-
-  /** Path to the knowledge base's root folder. */
-  root: string;
-
-  /** Excluded files and folders. */
-  exclude: Exclusions;
-
-  /** This knowledge base's files. */
-  files: File[];
-}
-
-interface KnowledgeBaseFilesystemWatcher {
-  root: string;
-  dispose(): void;
-}
-
-/** The list of loaded knowledge bases. Each corresponds to the workspace's folder. */
-const knowledgeBases: KnowledgeBase[] = [];
-
-/** The list of filesystem watchers. Each corresponds to the workspace's folder
- * and the loaded knowledge base associated with it. */
-const kbFilesystemWatchers: KnowledgeBaseFilesystemWatcher[] = [];
-
-// typescript definition for minisearch is a bit scratchy
 const miniSearch = new MiniSearch({
   fields: ['title', 'text'],
   storeFields: ['title', 'path']
 });
 
-async function addFileToSearchIndex(log: Logger, file: File): Promise<boolean> {
-  log.debug(`addFileToSearchIndex(${file.fullPath})`);
+/** The list of loaded knowledge bases. Each corresponds to the workspace's folder. */
+const knowledgeBases: IKnowledgeBase[] = [];
 
-  const content = await readFile(log, file.fullPath);
-  if (content === null) {
-    return false;
-  }
+/** The list of filesystem watchers. Each corresponds to the workspace's folder
+ * and the loaded knowledge base associated with it. */
+export const kbFsSyncs: IKbFilesystemSync[] = [];
 
-  miniSearch.add({
-    id: file.fullPath,
-    title: file.basename,
-    path: file.path,
-    text: content
-  });
+/** The list of search index watchers. Each corresponds to the workspace's folder. */
+export const kbSearchIndexSyncs : IMiniSearchSync[] = [];
 
-  return true;
-}
-
-async function replaceFileInSearchIndex(log: Logger, file: File) {
-  log.debug(`replaceFileInSearchIndex(${file.fullPath})`);
-
-  const content = await readFile(log, file.fullPath);
-  if (content === null) {
-    return false;
-  }
-
-  miniSearch.replace({
-    id: file.fullPath,
-    title: file.basename,
-    path: file.path,
-    text: content
-  });
-
-  return true;
-}
-
-function removePathFromSearchIndex(log: Logger, fileFullPath: string) {
-  log.debug(`removePathFromSearchIndex(${fileFullPath})`);
-
-  try {
-    miniSearch.discard(fileFullPath);
-  } catch (e) {
-    log.debug(`removePathFromSearchIndex(...): ${(e || "").toString()}`);
-  }
-}
-
-async function stat(log: Logger, path: string): Promise<fs.Stats | null> {
-  let st: fs.Stats | null = null;
-  try {
-    st = await fsp.stat(path);
-  } catch {
-    log.info(`Failed to stat the path ${path}.`);
-  }
-  return st;
-}
-
-async function readFile(log: Logger, path: string): Promise<string | null> {
-  let content: string | null = null;
-  try {
-    content = await fsp.readFile(path, { encoding: 'utf8' });
-  } catch {
-    log.info(`Failed to read the file ${path}.`);
-  }
-  return content;
-}
-
-
-/**
- * Filters out mathing and hidden (starting with `.`) files and folders.
- * 
- * @param {KnowledgeBase} kb The knowledge base.
- * @param {string} file The path to the file.
- */
-export function kbFileFilter(log: Logger, kb: KnowledgeBase, file: string): boolean {
-  //log(`kbFileFilter: kb.root='${kb.root}' file='${file}'`);
-
-  const rootFullPath = path.resolve(kb.root);
-  const fileFullPath = path.resolve(rootFullPath, file);
-
-  const relativePath = path.relative(rootFullPath, fileFullPath);
-  if (relativePath.startsWith('..')) {
-    // the file path is outside of the knowledge base
-    return false;
-  }
-
-  for (const pattern of Object.keys(kb.exclude)) {
-    if (minimatch(relativePath, pattern, { matchBase: true })) {
-      return false;
-    }
-  }
-
-  const relativePathItems = relativePath.split(path.sep);
-
-  for (const item of relativePathItems) {
-    // the file is in a hidden folder or is hidden itself
-    if (0 === item.indexOf('.')) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Constructs knowledge base file info.
- * 
- * @param {string} root Path to the knowledge base root folder.
- * @param {string} file Path to the knowledge base file.
- */
-async function getKbFileInfo(log: Logger, kb: KnowledgeBase, file: string, modified: Date): Promise<File | null> {
-  if (!kbFileFilter(log, kb, file)) {
-    return null;
-  }
-
-  const rootFullPath = path.resolve(kb.root);
-  const fullPath = path.resolve(file);
-  const relativePath = path.relative(rootFullPath, fullPath);
-  const name = path.basename(fullPath);
-  const extension = path.extname(name);
-  const folderRelativePath = path.dirname(relativePath);
-  const folder = '/' + (folderRelativePath === '.' ? '' : folderRelativePath).replace(/\\/g, '/');
-
-  let type = 'other';
-  if (extension.toUpperCase() === '.MD') {
-    type = 'markdown';
-  }
-
-  return {
-    fullPath,
-    folder,
-    path: (folder === '/' ? '' : folder) + '/' + name,
-    basename: path.basename(name, extension),
-    extension,
-    type,
-    modified
-  };
-}
-
-/**
- * Enumerating files in the knowledge base through asynchronous generator.
- * 
- * @param {string} rootFolder The root folder the of the knowledge base.
- * @param {string} folder Relative path of the knowledge base subfolder. Optional.
- */
-async function* findKbFiles(log: Logger, kb: KnowledgeBase, folder?: string): AsyncGenerator<File> {
-  const folderFullPath = path.join(kb.root, folder || '');
-
-  const files: string[] = [];
-  try {
-    files.push(...await fsp.readdir(folderFullPath));
-  } catch {
-    log.info(`Failed to read the folder ${folderFullPath}.`);
-    return;
-  }
-
-  log.debug(`findKbFiles: ${folderFullPath} -> ${JSON.stringify(files)}`);
-
-  for await (const item of files) {
-    // item is a folder or file name with extension
-
-    const itemRelativePath = path.join(folder || '', item);
-    const itemFullPath = path.join(kb.root, itemRelativePath);
-
-    const st = await stat(log, itemFullPath);
-
-    if (st === null) {
-      continue;
-    }
-
-    if (st.isDirectory()) {
-      yield* findKbFiles(log, kb, itemRelativePath);
-    } else {
-      const fileInfo = await getKbFileInfo(log, kb, itemFullPath, st.mtime);
-      if (fileInfo !== null) {
-        yield fileInfo;
-      }
-    }
-  }
-}
-
-/** Try to update file in the knowledge base. */
-async function tryUpdateKbFile(log: Logger, kb: KnowledgeBase, itemFullPath: string) {
-  const st = await stat(log, itemFullPath);
-  if (st === null || st.isDirectory()) {
-    return {};
-  }
-
-  const existingFile = kb.files.find((file: any) => file.fullPath === itemFullPath);
-
-  const newFile = await getKbFileInfo(log, kb, itemFullPath, st.mtime);
-  if (newFile === null) {
-    return { excluded: true };
-  }
-
-  if (!existingFile) {
-    kb.files.push(newFile);
-    return { added: newFile };
-  }
-
-  if (existingFile.modified !== newFile.modified) {
-    kb.files[kb.files.indexOf(existingFile)] = newFile;
-    return { updated: newFile, previous: existingFile };
-  }
-
-  return {};
-}
-
-async function addKb(log: Logger, root: string, exclude: any): Promise<any> {
+export async function addKb(log: Logger, root: string, exclude: any): Promise<IKnowledgeBase | null> {
   log.info(`Adding knowledge base: ${root}`);
 
   const existing = knowledgeBases.find(kb => kb.root === root);
   if (existing) {
     log.info(`The knowledge base "${root}" has been added already.`);
-    return;
+    return null;
   }
 
-  const kb: KnowledgeBase = { root, exclude, files: [] };
+  const kb = new KnowledgeBase(root, exclude);
   knowledgeBases.push(kb);
 
-  log.info(`Looking for files in the folder ${root} excluding ${JSON.stringify(exclude)}.`);
+  const sync = await createKbFilesystemSync(log, kb);
+  kbFsSyncs.push(sync);
 
-  for await (const file of findKbFiles(log, kb)) {
-    kb.files.push(file);
-  }
+  const indexSync = await createMiniSearchSync(log, miniSearch, kb);
+  kbSearchIndexSyncs.push(indexSync);
 
-  log.info(`Added ${kb.files.length} files to the knowledge base.`);
-
-  const ac = new AbortController();
-  kbFilesystemWatchers.push({
-    root: kb.root,
-    dispose: () => {
-      log.info(`Stopping monitoring knowledge base: ${kb.root}`);
-      ac.abort();
-    }
-  });
-
-  // event-based filesystem monitoring
-  (async () => {
-    log.info(`Starting monitoring knowledge base: ${kb.root}`);
-
-    try {
-      const watcher = fsp.watch(kb.root, { recursive: true, signal: ac.signal });
-
-      for await (const event of watcher) {
-        log.debug(`Received event: ${JSON.stringify(event)}`);
-
-        const filename = event.filename;
-        const filenameIsNotSet =
-          filename === undefined
-          || filename === null
-          || filename === '';
-
-        if (filenameIsNotSet) {
-          log.debug(`Event's filename is not set, skipping.`);
-          continue;
-        }
-
-        const itemFullName = path.join(kb.root, filename);
-        if (!kbFileFilter(log, kb, itemFullName)) {
-          log.debug(`The path ${itemFullName} is excluded, skipping.`);
-          continue;
-        }
-
-        const st = await stat(log, itemFullName);
-        if (st === null) {
-          const file = kb.files.find((file: any) => file.fullPath === itemFullName);
-          if (file && file.type === 'markdown') {
-            removePathFromSearchIndex(log, itemFullName);
-          }
-          log.debug(`The stats for the path ${itemFullName} are not available, skipping.`);
-          continue;
-        }
-
-        if (st.isDirectory()) {
-          log.debug(`The path ${itemFullName} is a directory, skipping.`);
-          continue;
-        }
-
-        const result = await tryUpdateKbFile(log, kb, itemFullName);
-        if (result.excluded) {
-          log.debug(`The file ${itemFullName} is excluded, skipping.`);
-          continue;
-        }
-
-        if (result.added) {
-          const file = result.added;
-          if (file.type === 'markdown') {
-            log.info(`Indexing the file ${file.path}.`);
-            await addFileToSearchIndex(log, file);
-          }
-          continue;
-        }
-        if (result.updated) {
-          const file = result.updated;
-          if (file.type === 'markdown') {
-            log.info(`Re-indexing the file ${file.path}.`);
-            await replaceFileInSearchIndex(log, file);
-          }
-          continue;
-        }
-      }
-    } catch (err: any) {
-      if (err && err.name === 'AbortError') {
-        log.info(`Stopped monitoring knowledge base: ${kb.root}`);
-        return;
-      }
-      throw err;
-    }
-  })();
-
-  const indexed = [];
-  const failures = [];
-  for (const file of kb.files) {
-    // only index markdown files
-    if (file.type !== 'markdown') {
-      continue;
-    }
-
-    // if added successfully, continue
-    if (await addFileToSearchIndex(log, file)) {
-      indexed.push(file);
-      continue;
-    }
-
-    failures.push(file);
-  }
-
-  log.info(`Indexed ${indexed.length} files in the knowledge base.`);
-
-  return { kb, indexed, failures };
+  return kb;
 }
 
-async function removeKb(log: Logger, root: string) {
-  const watcher = kbFilesystemWatchers.find(item => item.root === root);
-  if (watcher) {
-    watcher.dispose();
-    kbFilesystemWatchers.splice(kbFilesystemWatchers.indexOf(watcher), 1);
+export async function removeKb(log: Logger, root: string): Promise<IKnowledgeBase | null> {
+  const kb = knowledgeBases.find(kb => kb.root === root);
+  if (!kb) {
+    return null;
   }
 
-  const kb = knowledgeBases.find(kb => kb.root === root);
-  if (kb) {
-    knowledgeBases.splice(knowledgeBases.indexOf(kb), 1);
-    for (const file of kb.files) {
-      if (file.type === 'markdown') {
-        removePathFromSearchIndex(log, file.fullPath);
-      }
-    }
+  knowledgeBases.splice(knowledgeBases.indexOf(kb), 1);
+
+  const sync = kbFsSyncs.find(item => item.kb === kb);
+  if (sync) {
+    sync.dispose();
+    kbFsSyncs.splice(kbFsSyncs.indexOf(sync), 1);
   }
+
+  const indexSync = kbSearchIndexSyncs.find(item => item.kb === kb);
+  if (indexSync) {
+    indexSync.dispose();
+    kbSearchIndexSyncs.splice(kbSearchIndexSyncs.indexOf(indexSync), 1);
+  }
+
+  return kb;
 }
 
 // This method is called when the extension is activated
@@ -549,7 +199,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(addOrReplaceLinkCommandRegistration);
 
   (async () => {
-    for await (const e of wsEvents(logger)) {
+    for await (const e of createWorkspaceEventsIterator(logger)) {
       switch (e.action) {
         case 'added':
           await addKb(logger, e.folder, e.exclude || {});

@@ -4,6 +4,10 @@ All notable changes to the extension will be documented in this file.
 
 This file is organised according to [Keep a Changelog](http://keepachangelog.com/).
 
+## 0.1.6
+
+- Fix: renaming a folder does not update the search index.
+
 ## 0.1.5
 
 - Hotfix for the incorrect extension package.

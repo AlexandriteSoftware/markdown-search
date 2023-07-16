@@ -1,6 +1,6 @@
 import assert from 'assert';
 import vscode from 'vscode';
-import { wsEvents } from '../../wsEvents';
+import { createWorkspaceEventsIterator } from '../../WorkspaceEvents';
 
 suite('Extension Test Suite', () => {
   vscode.window.showInformationMessage('Start Extension Test Suite.');
@@ -22,7 +22,7 @@ suite('Extension Test Suite', () => {
   });
 
   test('should watch for vscode events', async () => {
-    const events = wsEvents();
+    const events = createWorkspaceEventsIterator();
 
     setTimeout(() => { events.dispose(); }, 1000);
 
