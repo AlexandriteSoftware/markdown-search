@@ -1,18 +1,18 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "ES2020",
-		"outDir": "out",
-		"lib": [
-			"ES2020"
-		],
-		"sourceMap": true,
-		"esModuleInterop": true,
-		"rootDir": "src",
-		"strict": true   /* enable all strict type-checking options */
-		/* Additional Checks */
-		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
-	}
+  "compilerOptions": {
+    "esModuleInterop": true,            // Enable interoperability between CommonJS and ES Modules via creation of namespace objects for all imports.
+    "lib": [ "ES2020" ],                // Define the library files to be included in the compilation.
+    "module": "commonjs",               // Define the module system.
+    "noImplicitAny": true,              // Raise error on expressions and declarations with an implied 'any' type.
+    "noImplicitReturns": true,          // Report error when not all code paths in function return a value.
+    "noImplicitThis": true,             // Raise error on 'this' expressions with an implied 'any' type.
+    "noUnusedLocals": true,             // Report errors on unused locals.
+    "outDir": "out",                    // The directory to output the results of the transpilation.
+    "preserveConstEnums": true,         // Do not erase const enum declarations in generated code.
+    "removeComments": false,            // Do not remove comments - helpful for understanding code, but you may want to remove for production.
+    "rootDir": "./src",                 // Specifies the root directory of input files.
+    "sourceMap": true,                  // Generates corresponding '.map' file for debugging.
+    "strict": true,                     // Enables all strict type checking options.
+    "target": "ES2020"                  // Define the output language level.
+  }
 }

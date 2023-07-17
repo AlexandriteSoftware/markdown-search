@@ -1,10 +1,9 @@
 {
   "name": "markdown-search",
   "displayName": "Markdown Full Text Search",
-  "description": "Markdown Full Text Search makes it easy to search for text in Markdown files. With this extension, you can quickly find the text you're looking for and link it.",
+  "description": "Markdown Full Text Search is a Visual Studio Code extension designed for efficient text searching within Markdown files. This extension allows users to effortlessly locate specific text and generate links to it.",
   "publisher": "AlexandriteSoftware",
-  "preview": true,
-  "version": "0.1.8",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.80.0"
   },

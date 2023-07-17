@@ -1,4 +1,3 @@
-import assert from 'assert';
 import vscode from 'vscode';
 import MiniSearch from 'minisearch';
 import { IKnowledgeBase, KnowledgeBase, IFile } from '../../KnowledgeBase';
