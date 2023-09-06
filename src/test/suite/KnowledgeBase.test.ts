@@ -1,11 +1,18 @@
 import assert from 'assert';
 import vscode from 'vscode';
-import { Exclusions, KnowledgeBase, File } from '../../KnowledgeBase';
+import
+{
+  Exclusions,
+  KnowledgeBase,
+  File
+} from '../../KnowledgeBase';
 
-suite('KnowledgeBase Tests', () => {
+suite('KnowledgeBase Tests', () =>
+{
   vscode.window.showInformationMessage('Start KnowledgeBase Tests');
 
-  test('filesWithFilesystemPath returns files as expected', () => {
+  test('filesWithFilesystemPath returns files as expected', () =>
+  {
     const exclude: Exclusions = {};
     exclude["node_modules"] = true;
 
@@ -40,7 +47,8 @@ suite('KnowledgeBase Tests', () => {
       '/test1/asdf.md,/test1/asdf2.md');
   });
 
-  test('isAccepted filters out files as expected', () => {
+  test('isAccepted filters out files as expected', () =>
+  {
     const exclude: Exclusions = {};
     exclude["node_modules/**"] = true;
 

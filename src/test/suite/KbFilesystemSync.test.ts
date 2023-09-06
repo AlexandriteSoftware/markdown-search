@@ -5,19 +5,27 @@ import os from 'os';
 import fs from 'fs/promises';
 import { KnowledgeBase } from '../../KnowledgeBase';
 import { createLogger } from 'winston';
-import { createKbFilesystemSync } from '../../KbFilesystemSync';
-import { waitFor } from '../helpers';
+import { createKbFilesystemEventsIterator } from '../../KbFilesystemSync';
+import
+{
+  waitFor,
+  retry
+} from '../support/controlFlowHelpers';
 
-suite('KbFilesystemSync Tests', () => {
+suite('KbFilesystemSync Tests', () =>
+{
   vscode.window.showInformationMessage('Start KbFilesystemSync Tests');
 
   const logger = createLogger({ silent: true });
-  test('syncs kb files with filesystem', async () => {
+  test('syncs kb files with filesystem', async function ()
+  {
+    this.timeout(5000);
+
     const tmpPathBase = path.join(os.tmpdir(), 'test-');
     const tmpFolder = await fs.mkdtemp(tmpPathBase);
 
     const kb = new KnowledgeBase(tmpFolder);
-    const sync = await createKbFilesystemSync(logger, kb);
+    const sync = await createKbFilesystemEventsIterator(logger, kb);
     try {
       // adding file
       await fs.writeFile(path.join(tmpFolder, 'test.md'), 'test', { encoding: 'utf8' });
@@ -37,7 +45,7 @@ suite('KbFilesystemSync Tests', () => {
       assert.ok(true);
     } finally {
       sync.dispose();
-      await fs.rm(tmpFolder, { recursive: true });
+      await retry(() => fs.rm(tmpFolder, { recursive: true, force: true }));
     }
   });
 });

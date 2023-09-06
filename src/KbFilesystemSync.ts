@@ -6,12 +6,16 @@ import { IKnowledgeBase, IFile } from './KnowledgeBase';
 
 const modules = { path };
 
-export interface IKbFilesystemSync {
+export interface IKbFilesystemSync
+{
   kb: IKnowledgeBase;
   dispose(): void;
 }
 
-async function stat(path: string): Promise<fs.Stats | null> {
+async function stat
+  (path: string)
+  : Promise<fs.Stats | null>
+{
   let st: fs.Stats | null = null;
   try {
     st = await fsp.stat(path);
@@ -22,7 +26,12 @@ async function stat(path: string): Promise<fs.Stats | null> {
 }
 
 /** Enumerating filesystem files in the knowledge base folder through asynchronous generator. */
-export async function* findKbFiles(log: Logger, kb: IKnowledgeBase, path?: string): AsyncGenerator<IFile> {
+export async function* findKbFiles
+  (log: Logger,
+    kb: IKnowledgeBase,
+    path?: string)
+  : AsyncGenerator<IFile>
+{
   const fullPath =
     path === undefined || path === null || path === '' || path === '.'
       ? kb.root
@@ -82,7 +91,11 @@ export async function* findKbFiles(log: Logger, kb: IKnowledgeBase, path?: strin
   }
 }
 
-export async function createKbFilesystemSync(log: Logger, kb: IKnowledgeBase): Promise<IKbFilesystemSync> {
+export async function createKbFilesystemEventsIterator
+  (log: Logger,
+    kb: IKnowledgeBase)
+  : Promise<IKbFilesystemSync>
+{
   const files = [];
   for await (const file of findKbFiles(log, kb)) {
     files.push(file);
@@ -93,16 +106,18 @@ export async function createKbFilesystemSync(log: Logger, kb: IKnowledgeBase): P
 
   const ac = new AbortController();
 
-  const sync : IKbFilesystemSync = {
+  const sync: IKbFilesystemSync = {
     kb,
-    dispose: () => {
+    dispose: () =>
+    {
       log.info(`KbFilesystemSync: stopping monitoring "${kb.root}".`);
       ac.abort();
     }
   };
 
   // event-based filesystem monitoring
-  (async () => {
+  (async () =>
+  {
     log.info(`Watcher: starting monitoring "${kb.root}".`);
 
     try {
@@ -132,7 +147,7 @@ export async function createKbFilesystemSync(log: Logger, kb: IKnowledgeBase): P
         const existing = kb.filesWithFilesystemPath(itemFullName);
         kb.removeFiles(existing);
 
-        const added : IFile[] = [];
+        const added: IFile[] = [];
         for await (const file of findKbFiles(log, kb, itemFullName)) {
           added.push(file);
         }

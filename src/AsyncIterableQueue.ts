@@ -1,35 +1,67 @@
-export interface IEnqueue<T> {
-  enqueue(value: T): void;
+export interface Enqueuer<T>
+{
+  enqueue
+    (value: T)
+    : void;
 }
 
-export class AsyncIterableQueue<T> implements AsyncIterable<T>, IEnqueue<T> {
+export interface DisposableAsyncIterable<T>
+  extends AsyncIterable<T>
+{
+  dispose()
+    : void;
+}
+
+/**
+ * Disposable and asynchronously iteratable queue.
+ * 
+ * Disposing the queue prevents further enqueuing and resolves all pending promises.
+ */
+export class AsyncIterableQueue<T>
+  implements
+  DisposableAsyncIterable<T>,
+  Enqueuer<T>
+{
   private readonly _values: T[] = [];
   private readonly _resolves: ((value: IteratorResult<T>) => void)[] = [];
   private readonly _dispose: () => void = () => { };
   private _disposed: boolean = false;
 
-  constructor(dispose : () => void) {
-    this._dispose = dispose;
+  constructor(dispose?: (() => void))
+  {
+    this._dispose = dispose || (() => { });
   }
 
-  [Symbol.asyncIterator]() {
+  /**
+   * Next is eigher immediatelly resolves the next value or waits for the next value to be enqueued.
+   * 
+   * @returns {AsyncIterator<T>}
+   */
+  [Symbol.asyncIterator]()
+    : { next: () => Promise<IteratorResult<T>>; }
+  {
     return {
-      next: (): Promise<IteratorResult<T>> => {
+      next: (): Promise<IteratorResult<T>> =>
+      {
         if (this._disposed) {
-          return Promise.resolve<IteratorResult<T>>({ done: true, value: undefined });
+          return Promise.resolve<IteratorResult<T>>(
+            { done: true, value: undefined });
         }
 
         if (this._values.length === 0) {
-          return new Promise<IteratorResult<T>>(resolve => this._resolves.push(resolve));
+          return new Promise<IteratorResult<T>>(
+            resolve => this._resolves.push(resolve));
         }
 
         const value = this._values.shift() as T;
-        return Promise.resolve<IteratorResult<T>>({ done: false, value });
+        return Promise.resolve<IteratorResult<T>>(
+          { done: false, value });
       }
     };
   }
 
-  dispose() {
+  dispose()
+  {
     this._disposed = true;
 
     this._dispose();
@@ -40,7 +72,9 @@ export class AsyncIterableQueue<T> implements AsyncIterable<T>, IEnqueue<T> {
     }
   }
 
-  enqueue(value: T) {
+  enqueue
+    (value: T)
+  {
     if (this._disposed) {
       return;
     }

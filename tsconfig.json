@@ -1,18 +1,46 @@
 {
   "compilerOptions": {
-    "esModuleInterop": true,            // Enable interoperability between CommonJS and ES Modules via creation of namespace objects for all imports.
-    "lib": [ "ES2020" ],                // Define the library files to be included in the compilation.
-    "module": "commonjs",               // Define the module system.
-    "noImplicitAny": true,              // Raise error on expressions and declarations with an implied 'any' type.
-    "noImplicitReturns": true,          // Report error when not all code paths in function return a value.
-    "noImplicitThis": true,             // Raise error on 'this' expressions with an implied 'any' type.
-    "noUnusedLocals": true,             // Report errors on unused locals.
-    "outDir": "out",                    // The directory to output the results of the transpilation.
-    "preserveConstEnums": true,         // Do not erase const enum declarations in generated code.
-    "removeComments": false,            // Do not remove comments - helpful for understanding code, but you may want to remove for production.
-    "rootDir": "./src",                 // Specifies the root directory of input files.
-    "sourceMap": true,                  // Generates corresponding '.map' file for debugging.
-    "strict": true,                     // Enables all strict type checking options.
-    "target": "ES2020"                  // Define the output language level.
+    // Enable interoperability between CommonJS and ES Modules via
+    // creation of namespace objects for all imports.
+    "esModuleInterop": true,
+
+    // Define the library files to be included in the compilation.
+    "lib": [ "ES2020" ],
+
+    // Define the module system.
+    "module": "commonjs",
+
+    // Raise error on expressions and declarations with an implied 'any' type.
+    "noImplicitAny": true,
+
+    // Report error when not all code paths in function return a value.
+    "noImplicitReturns": true,
+
+    // Raise error on 'this' expressions with an implied 'any' type.
+    "noImplicitThis": true,
+
+    // Report errors on unused locals.
+    "noUnusedLocals": true,
+
+    // The directory to output the results of the transpilation.
+    "outDir": "out",
+
+    // Do not erase const enum declarations in generated code.
+    "preserveConstEnums": true,
+
+    // Do not remove comments - helpful for understanding code, but you may want to remove for production.
+    "removeComments": false,
+
+    // Specifies the root directory of input files.
+    "rootDir": "./src",
+
+    // Generates corresponding '.map' file for debugging.
+    "sourceMap": true,
+
+    // Enables all strict type checking options.
+    "strict": true,
+
+    // Define the output language level.
+    "target": "ES2020"
   }
 }

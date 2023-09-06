@@ -1,21 +1,38 @@
 import vscode from 'vscode';
 import MiniSearch from 'minisearch';
-import { createLogger, format, Logger } from 'winston';
+import
+{
+  createLogger,
+  format
+} from 'winston';
 import Transport from 'winston-transport';
-import { IKnowledgeBase, KnowledgeBase } from './KnowledgeBase';
-import { createWorkspaceEventsIterator } from './WorkspaceEvents';
-import { createKbFilesystemSync, IKbFilesystemSync } from './KbFilesystemSync';
-import { createMiniSearchSync, createMiniSearchEventQueue, IMiniSearchSync } from './MiniSearchSync';
+import { AsyncIterableQueue } from './AsyncIterableQueue';
+import { EditorEvent } from './EditorEvents';
+import { translateWorkspaceToEditorEvents } from './translateWorkspaceToEditorEvents';
+import { MiniSearchCommand } from './MiniSearchCommands';
+import { processMiniSearchCommands } from './processMiniSearchCommands';
+import { translateKbEventsToMiniSearchCommands } from './translateKbEventsToMiniSearchCommands';
+import { KbEvent } from './KbEvents';
+import { translateEditorEventsToKbEvents } from './translateEditorEventsToKbEvents';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
 
-class OutputChannelTransport extends Transport {
+class OutputChannelTransport
+  extends Transport
+{
   outputChannel: vscode.OutputChannel | null = null;
-  updateOutputChannel(channel: vscode.OutputChannel) {
+
+  updateOutputChannel
+    (channel: vscode.OutputChannel)
+  {
     this.outputChannel = channel;
   }
-  log(info: any, callback: () => void) {
+
+  log
+    (info: any,
+      callback: () => void)
+  {
     if (this.outputChannel !== null) {
       this.outputChannel.appendLine(info.message);
     }
@@ -23,14 +40,17 @@ class OutputChannelTransport extends Transport {
   }
 }
 
-let outputChannelTransport :  OutputChannelTransport | null = null;
+let outputChannelTransport: OutputChannelTransport | null = null;
 
-const loggerOptions = (() => {
+const loggerOptions = (() =>
+{
   const configuration = vscode.workspace.getConfiguration();
+
   const loggingLevel = configuration.get('markdown-search.logging.level') as string;
   if (loggingLevel === 'none') {
     return { silent: true };
   }
+
   let readLoggingLevel = 'info';
   switch (loggingLevel) {
     case 'emerg':
@@ -44,7 +64,9 @@ const loggerOptions = (() => {
       readLoggingLevel = loggingLevel;
       break;
   }
+
   outputChannelTransport = new OutputChannelTransport();
+
   return {
     level: readLoggingLevel,
     format: format.simple(),
@@ -59,64 +81,39 @@ const miniSearch = new MiniSearch({
   storeFields: ['title', 'path']
 });
 
-const miniSearchQueue = createMiniSearchEventQueue(logger, miniSearch);
+const disposables: (() => void)[] = [];
 
-/** The list of loaded knowledge bases. Each corresponds to the workspace's folder. */
-const knowledgeBases: IKnowledgeBase[] = [];
+function startQueues
+  (miniSearch: MiniSearch)
+{
+  const editorEventsQueue = new AsyncIterableQueue<EditorEvent>();
+  const kbEventsQueue = new AsyncIterableQueue<KbEvent>();
+  const miniSearchQueue = new AsyncIterableQueue<MiniSearchCommand>();
 
-/** The list of filesystem watchers. Each corresponds to the workspace's folder
- * and the loaded knowledge base associated with it. */
-export const kbFsSyncs: IKbFilesystemSync[] = [];
+  disposables.push(() =>
+  {
+    editorEventsQueue.dispose();
+    kbEventsQueue.dispose();
+    miniSearchQueue.dispose();
+  });
 
-/** The list of search index watchers. Each corresponds to the workspace's folder. */
-export const kbSearchIndexSyncs: IMiniSearchSync[] = [];
-
-export async function addKb(log: Logger, root: string, exclude: any): Promise<IKnowledgeBase | null> {
-  log.info(`Adding knowledge base: ${root}`);
-
-  const existing = knowledgeBases.find(kb => kb.root === root);
-  if (existing) {
-    log.info(`The knowledge base "${root}" has been added already.`);
-    return null;
-  }
-
-  const kb = new KnowledgeBase(root, exclude);
-  knowledgeBases.push(kb);
-
-  const sync = await createKbFilesystemSync(log, kb);
-  kbFsSyncs.push(sync);
-
-  const indexSync = await createMiniSearchSync(log, miniSearchQueue, kb);
-  kbSearchIndexSyncs.push(indexSync);
-
-  return kb;
+  disposables.push(translateWorkspaceToEditorEvents(logger, editorEventsQueue));
+  disposables.push(translateEditorEventsToKbEvents(logger, editorEventsQueue, kbEventsQueue));
+  disposables.push(translateKbEventsToMiniSearchCommands(logger, kbEventsQueue, miniSearchQueue));
+  disposables.push(processMiniSearchCommands(logger, miniSearchQueue, miniSearch));
 }
 
-export async function removeKb(log: Logger, root: string): Promise<IKnowledgeBase | null> {
-  const kb = knowledgeBases.find(kb => kb.root === root);
-  if (!kb) {
-    return null;
+function stopQueues()
+{
+  for (const disposable of disposables) {
+    disposable();
   }
-
-  knowledgeBases.splice(knowledgeBases.indexOf(kb), 1);
-
-  const sync = kbFsSyncs.find(item => item.kb === kb);
-  if (sync) {
-    sync.dispose();
-    kbFsSyncs.splice(kbFsSyncs.indexOf(sync), 1);
-  }
-
-  const indexSync = kbSearchIndexSyncs.find(item => item.kb === kb);
-  if (indexSync) {
-    indexSync.dispose();
-    kbSearchIndexSyncs.splice(kbSearchIndexSyncs.indexOf(indexSync), 1);
-  }
-
-  return kb;
 }
 
 // This method is called when the extension is activated
-export function activate(context: vscode.ExtensionContext) {
+export function activate
+  (context: vscode.ExtensionContext)
+{
   if (outputChannelTransport !== null) {
     // create and show the output channel
     const outputChannel = vscode.window.createOutputChannel(EXTENSION_NAME);
@@ -126,16 +123,19 @@ export function activate(context: vscode.ExtensionContext) {
 
   logger.info(`The extension "${EXTENSION_NAME}" (${EXTENSION_ID}) is now active.`);
 
-  function createSearchQuickPick() {
+  function createSearchQuickPick()
+  {
     const quickPick = vscode.window.createQuickPick();
 
-    quickPick.onDidChangeValue(value => {
+    quickPick.onDidChangeValue(value =>
+    {
       const results =
         miniSearch.search(
           value,
           { fuzzy: 0.2, boost: { title: 2 } });
 
-      quickPick.items = results.map(item => {
+      quickPick.items = results.map(item =>
+      {
         return {
           alwaysShow: true,
           label: item.path,
@@ -168,10 +168,12 @@ export function activate(context: vscode.ExtensionContext) {
   const searchCommandRegistration =
     vscode.commands.registerCommand(
       'markdown-search.search',
-      () => {
+      () =>
+      {
         const quickPick = createSearchQuickPick();
 
-        quickPick.onDidAccept(async () => {
+        quickPick.onDidAccept(async () =>
+        {
           const item = quickPick.selectedItems[0];
           if (item === undefined) {
             return;
@@ -184,6 +186,8 @@ export function activate(context: vscode.ExtensionContext) {
         });
 
         quickPick.show();
+
+        return { quickPick };
       });
 
   context.subscriptions.push(searchCommandRegistration);
@@ -192,10 +196,12 @@ export function activate(context: vscode.ExtensionContext) {
   const addOrReplaceLinkCommandRegistration =
     vscode.commands.registerCommand(
       'markdown-search.add-or-replace-link',
-      () => {
+      () =>
+      {
         const quickPick = createSearchQuickPick();
 
-        quickPick.onDidAccept(async () => {
+        quickPick.onDidAccept(async () =>
+        {
           const item = quickPick.selectedItems[0];
           if (item === undefined) {
             return;
@@ -203,7 +209,8 @@ export function activate(context: vscode.ExtensionContext) {
 
           const editor = vscode.window.activeTextEditor;
           if (editor) {
-            editor.edit(editBuilder => {
+            editor.edit(editBuilder =>
+            {
               const link = item.label.replace(/\.md$/i, '');
               const text = editor.document.getText(editor.selection);
               if (text === '') {
@@ -219,22 +226,16 @@ export function activate(context: vscode.ExtensionContext) {
         });
 
         quickPick.show();
+
+        return { quickPick };
       });
 
   context.subscriptions.push(addOrReplaceLinkCommandRegistration);
 
-  (async () => {
-    for await (const e of createWorkspaceEventsIterator(logger)) {
-      switch (e.action) {
-        case 'added':
-          await addKb(logger, e.folder, e.exclude || {});
-          break;
-        case 'removed':
-          await removeKb(logger, e.folder);
-          break;
-      }
-    }
-  })();
+  startQueues(miniSearch);
 }
 
-export function deactivate() { }
+export function deactivate()
+{
+  stopQueues();
+}
