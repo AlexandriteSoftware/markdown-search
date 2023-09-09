@@ -17,13 +17,13 @@ Get it from Visual Studio Code marketplace: [Markdown Full Text Search](https://
 
 Press `Ctrl+Shift+P` to open the command palette. Then, search for either the `Markdown Search: Search in Markdown files` or `Markdown Search: Add link from search results` commands.
 
-![demo: command palette](<docs/demo - command palette.png>)
+![demo: command palette](<https://raw.githubusercontent.com/AlexandriteSoftware/markdown-search/main/docs/demo - command palette.png>)
 
 The `Search in Markdown files` command opens a search box where you can input the text you're seeking. By clicking on a search result or pressing Enter, you'll open the relevant file in the editor.
 
 The `Add link from search results` command also opens a search box for text entry. Clicking on a search result or pressing Enter will create a link in the editor to the relevant file. The selected text becomes the title of this link.
 
-![demo: add link from search results](<docs/demo - add link from search results.gif>)
+![demo: add link from search results](<https://raw.githubusercontent.com/AlexandriteSoftware/markdown-search/main/docs/demo - add link from search results.gif>)
 
 Search results will be displayed immediately if you open the search command with selected text.
 
