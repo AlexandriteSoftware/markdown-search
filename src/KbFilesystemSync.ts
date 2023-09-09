@@ -39,7 +39,7 @@ export async function* findKbFiles
 
   const st = await stat(fullPath);
   if (st === null) {
-    log.debug(`findKbFiles: failed to stat "${fullPath}".`);
+    log.debug(`[findKbFiles] failed to stat "${fullPath}".`);
     return;
   }
 
@@ -56,16 +56,16 @@ export async function* findKbFiles
   try {
     all.push(...await fsp.readdir(fullPath));
   } catch {
-    log.info(`findKbFiles: failed to read the folder "${fullPath}".`);
+    log.info(`[findKbFiles] failed to read the folder "${fullPath}".`);
     return;
   }
 
-  log.debug(`findKbFiles: "${fullPath}" all: ${JSON.stringify(all)}`);
+  log.debug(`[findKbFiles] "${fullPath}" all: ${JSON.stringify(all)}`);
 
   const filtered =
     all.filter(item => kb.isAccepted(modules.path.join(fullPath, item)));
 
-  log.debug(`findKbFiles: "${fullPath}" filtered: ${JSON.stringify(filtered)}`);
+  log.debug(`[findKbFiles] "${fullPath}" filtered: ${JSON.stringify(filtered)}`);
 
   for await (const item of filtered) {
     // item is a folder or file name with extension
@@ -76,7 +76,7 @@ export async function* findKbFiles
     const st = await stat(itemFullPath);
 
     if (st === null) {
-      log.debug(`findKbFiles: failed to stat "${fullPath}".`);
+      log.debug(`[findKbFiles] failed to stat "${fullPath}".`);
       continue;
     }
 
@@ -102,7 +102,7 @@ export async function createKbFilesystemEventsIterator
   }
   kb.addFiles(files);
 
-  log.info(`KbFilesystemSync: added ${files.length} files to the knowledge base.`);
+  log.info(`[KbFilesystemSync] added ${files.length} files to the knowledge base.`);
 
   const ac = new AbortController();
 
@@ -110,7 +110,7 @@ export async function createKbFilesystemEventsIterator
     kb,
     dispose: () =>
     {
-      log.info(`KbFilesystemSync: stopping monitoring "${kb.root}".`);
+      log.info(`[KbFilesystemSync] stopping monitoring "${kb.root}".`);
       ac.abort();
     }
   };
@@ -118,31 +118,31 @@ export async function createKbFilesystemEventsIterator
   // event-based filesystem monitoring
   (async () =>
   {
-    log.info(`Watcher: starting monitoring "${kb.root}".`);
+    log.info(`[Watcher] starting monitoring "${kb.root}".`);
 
     try {
       const watcher = fsp.watch(kb.root, { recursive: true, signal: ac.signal });
 
       for await (const event of watcher) {
         if (event === null || event === undefined) {
-          log.debug(`Watcher: skipping, event is empty.`);
+          log.debug(`[Watcher] skipping, event is empty.`);
           continue;
         }
 
         const filename = event.filename;
 
         if (filename === undefined || filename === null || filename === '') {
-          log.debug(`Watcher: skipping, event filename is empty, event is ${JSON.stringify(event)}.`);
+          log.debug(`[Watcher] skipping, event filename is empty, event is ${JSON.stringify(event)}.`);
           continue;
         }
 
         const itemFullName = path.join(kb.root, filename);
         if (!kb.isAccepted(itemFullName)) {
-          log.debug(`Watcher: skipping, event path "${itemFullName}" is excluded, event is ${JSON.stringify(event)}.`);
+          log.debug(`[Watcher] skipping, event path "${itemFullName}" is excluded, event is ${JSON.stringify(event)}.`);
           continue;
         }
 
-        log.debug(`Watcher: the file or folder "${itemFullName}" was changed, removing and adding its files, event is ${JSON.stringify(event)}.`);
+        log.debug(`[Watcher] the file or folder "${itemFullName}" was changed, removing and adding its files, event is ${JSON.stringify(event)}.`);
 
         const existing = kb.filesWithFilesystemPath(itemFullName);
         kb.removeFiles(existing);
@@ -155,7 +155,7 @@ export async function createKbFilesystemEventsIterator
       }
     } catch (err: any) {
       if (err && err.name === 'AbortError') {
-        log.info(`Watcher: stopped monitoring "${kb.root}".`);
+        log.info(`[Watcher] stopped monitoring "${kb.root}".`);
         return;
       }
       throw err;

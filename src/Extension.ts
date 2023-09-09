@@ -17,6 +17,7 @@ import { translateEditorEventsToKbEvents } from './translateEditorEventsToKbEven
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
+const EXTENSION_VERSION = '0.2.4';
 
 class OutputChannelTransport
   extends Transport
@@ -121,7 +122,8 @@ export function activate
     outputChannelTransport.updateOutputChannel(outputChannel);
   }
 
-  logger.info(`The extension "${EXTENSION_NAME}" (${EXTENSION_ID}) is now active.`);
+  logger.info(
+    `The extension "${EXTENSION_NAME}" (${EXTENSION_ID}) version ${EXTENSION_VERSION} is now active.`);
 
   function createSearchQuickPick()
   {

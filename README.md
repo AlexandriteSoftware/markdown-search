@@ -45,4 +45,4 @@ Markdown Full Text Search is created for you by Alexandrite Software, a software
 
 ## Releases
 
-See the [CHANGELOG](CHANGELOG) for the details about the changes in each release.
+See the [CHANGELOG](CHANGELOG.md) for the details about the changes in each release.

@@ -3,7 +3,7 @@
   "displayName": "Markdown Full Text Search",
   "description": "Markdown Full Text Search is a Visual Studio Code extension designed for efficient text searching within Markdown files. This extension allows users to effortlessly locate specific text and generate links to it.",
   "publisher": "AlexandriteSoftware",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "engines": {
     "vscode": "^1.80.0"
   },

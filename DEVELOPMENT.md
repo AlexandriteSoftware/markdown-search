@@ -13,13 +13,16 @@ All temp folders are deleted automatically when the tests finish.
 
 The approach with creating test folders per test failed, because VSCode locks the folders and they cannot be deleted. Therefore, the current approach is to delete the test folders after the test executable terminates.
 
-## Build
+## Pubishing
+
+Make sure the versions are updated in `package.json`, `CHANGELOG.md`, and `Extension.ts`.
 
 ```PowerShell
 Remove-Item -Path .\out -Recurse -Force
 Remove-Item -Path .\dist -Recurse -Force
 vsce package
 npm run test
+vsce publish
 ```
 
 ## Versioning
@@ -32,3 +35,5 @@ By convention:
 - `minor` is increased when there is a new feature or a significant improvement.
 
 Increasing the `major` part of the version is decided on a case-by-case basis.
+
+For runtime, the version is in `Extension.ts`, in `EXTENSION_VERSION`.
