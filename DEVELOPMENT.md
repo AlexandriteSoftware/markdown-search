@@ -5,13 +5,19 @@
 - Run tests: `npm run test`
 - Build the extension: `vsce package`
 
+## Testing
+
 ### Temporary folders
 
 Test temporary folders are created in the system's temporary folder. They are named `test-markdown-search/<random-id>`. They are deleted when the test suite finishes.
 
 All temp folders are deleted automatically when the tests finish.
 
-The approach with creating test folders per test failed, because VSCode locks the folders and they cannot be deleted. Therefore, the current approach is to delete the test folders after the test executable terminates.
+The approach was selected due to issues with creating individual test folders for each test. VSCode locks these folders, preventing their deletion. As a result, the temporary folder is deleted in runTest.ts after VSCode is terminated.
+
+### Run single tests
+
+Change the filter in `src/test/suite/index.ts`.
 
 ## Pubishing
 

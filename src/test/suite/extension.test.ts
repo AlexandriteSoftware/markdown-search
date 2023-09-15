@@ -40,6 +40,10 @@ suite('Extension Test Suite', () =>
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      await vscode.commands.executeCommand('workbench.action.acceptSelectedQuickOpenItem');
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       assert.strictEqual(quickPick.items.length, 1);
 
       quickPick.dispose();
@@ -87,9 +91,13 @@ suite('Extension Test Suite', () =>
       const quickPick = result.quickPick as vscode.QuickPick<vscode.QuickPickItem>;
       quickPick.value = 'test';
 
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      await vscode.commands.executeCommand('workbench.action.acceptSelectedQuickOpenItem');
+
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      assert.strictEqual(quickPick.items.length, 1);
+      const text = editor.document.getText();
 
       quickPick.dispose();
 
@@ -99,5 +107,7 @@ suite('Extension Test Suite', () =>
       if (workspaceFolder) {
         await replaceWorkspaceFolder(workspaceFolder);
       }
+
+      assert.strictEqual(text, '[test](</test>)');
     });
 });
