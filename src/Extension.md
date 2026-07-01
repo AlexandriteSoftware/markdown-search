@@ -1,5 +1,4 @@
-Extension
-===
+# Extension
 
 Diagram of the extension's data flow:
 

@@ -1,19 +1,28 @@
-import vscode from 'vscode';
-import MiniSearch from 'minisearch';
-import
-{
-  createLogger,
-  format
-} from 'winston';
-import Transport from 'winston-transport';
-import { AsyncIterableQueue } from './AsyncIterableQueue';
-import { EditorEvent } from './EditorEvents';
-import { translateWorkspaceToEditorEvents } from './translateWorkspaceToEditorEvents';
-import { MiniSearchCommand } from './MiniSearchCommands';
-import { processMiniSearchCommands } from './processMiniSearchCommands';
-import { translateKbEventsToMiniSearchCommands } from './translateKbEventsToMiniSearchCommands';
-import { KbEvent } from './KbEvents';
-import { translateEditorEventsToKbEvents } from './translateEditorEventsToKbEvents';
+import vscode
+  from 'vscode';
+import MiniSearch
+  from 'minisearch';
+import { createLogger,
+         format }
+  from 'winston';
+import Transport
+  from 'winston-transport';
+import { AsyncIterableQueue }
+  from './AsyncIterableQueue';
+import { EditorEvent }
+  from './EditorEvents';
+import { translateWorkspaceToEditorEvents }
+  from './translateWorkspaceToEditorEvents';
+import { MiniSearchCommand }
+  from './MiniSearchCommands';
+import { processMiniSearchCommands }
+  from './processMiniSearchCommands';
+import { translateKbEventsToMiniSearchCommands }
+  from './translateKbEventsToMiniSearchCommands';
+import { KbEvent }
+  from './KbEvents';
+import { translateEditorEventsToKbEvents }
+  from './translateEditorEventsToKbEvents';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
