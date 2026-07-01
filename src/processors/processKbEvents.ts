@@ -1,21 +1,23 @@
 import { Logger }
   from 'winston';
 import { Enqueuer }
-  from './AsyncIterableQueue';
+  from '../AsyncIterableQueue';
 import { KbEvent,
          isKbAddedEvent,
          isKbFileAddedEvent,
          isKbFileRemovedEvent,
          isKbFileUpdatedEvent,
          isKbRemovedEvent }
-  from './KbEvents';
-import { MiniSearchCommand }
-  from './MiniSearchCommands';
+  from '../KbEvents';
+import { MiniSearchEvent,
+         IndexFile,
+         RemoveFile }
+  from '../MiniSearchEvents';
 
-export function translateKbEventsToMiniSearchCommands(
+export function processKbEvents(
     log: Logger,
     queue: AsyncIterable<KbEvent>,
-    enqueuer: Enqueuer<MiniSearchCommand>
+    enqueuer: Enqueuer<MiniSearchEvent>
   ): () => void
 {
   let disposed = false;
@@ -31,31 +33,31 @@ export function translateKbEventsToMiniSearchCommands(
 
       if (isKbAddedEvent(event)) {
         for (const file of event.files) {
-          enqueuer.enqueue(
-            { action: 'index',
+          enqueuer.enqueue<IndexFile>(
+            { event: 'index',
               path: file,
               root });
         }
       } else if (isKbRemovedEvent(event)) {
         for (const path of event.files) {
-          enqueuer.enqueue(
-            { action: 'remove',
+          enqueuer.enqueue<RemoveFile>(
+            { event: 'remove',
               path,
               root });
         }
       } else if (isKbFileAddedEvent(event)) {
-        enqueuer.enqueue(
-          { action: 'index',
+        enqueuer.enqueue<IndexFile>(
+          { event: 'index',
             path: event.path,
             root });
       } else if (isKbFileUpdatedEvent(event)) {
-        enqueuer.enqueue(
-          { action: 'index',
+        enqueuer.enqueue<IndexFile>(
+          { event: 'index',
             path: event.path,
             root });
       } else if (isKbFileRemovedEvent(event)) {
-        enqueuer.enqueue(
-          { action: 'remove',
+        enqueuer.enqueue<RemoveFile>(
+          { event: 'remove',
             path: event.path,
             root });
       }

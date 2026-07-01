@@ -1,15 +1,19 @@
-// Place your settings in this file to overwrite default and user settings.
 {
-    "files.exclude": {
-        "out": false // set this to true to hide the "out" folder with the compiled JS files
-    },
-    "search.exclude": {
-        "out": true, // set this to false to include "out" folder in search results
-        "node_modules/**": true
-    },
-    // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-    "typescript.tsc.autoDetect": "off",
-    "FSharp.suggestGitignore": false,
-    "javascript.format.placeOpenBraceOnNewLineForFunctions": false,
-    "typescript.format.placeOpenBraceOnNewLineForFunctions": true
+  "files.exclude": {
+    /* set this to true to hide the "out" folder with the compiled JS files */
+    "out": false
+  },
+  "search.exclude": {
+    /* set this to false to include "out" folder in search results */
+    "out": true,
+    "node_modules/**": true
+  },
+  /* Turn off tsc task auto detection since we have the necessary tasks as npm scripts */
+  "js/ts.format.placeOpenBraceOnNewLineForFunctions": true,
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "$(capture).d.ts, $(capture).test.ts, $(capture).md",
+    "*.js": "$(capture).d.ts, $(capture).js.map, $(capture).d.ts.map",
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml"
+  }
 }

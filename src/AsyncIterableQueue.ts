@@ -1,7 +1,7 @@
 export interface Enqueuer<T>
 {
-  enqueue(
-      value: T
+  enqueue<V extends T = T>(
+      value: V
     ): void;
 }
 
@@ -86,8 +86,8 @@ export class AsyncIterableQueue<T>
     }
   }
 
-  enqueue(
-      value: T
+  enqueue<V extends T = T>(
+      value: V
     ): void
   {
     if (this._disposed) {

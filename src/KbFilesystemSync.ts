@@ -1,8 +1,14 @@
-import fs from 'fs';
-import fsp from 'fs/promises';
-import path from 'path';
-import { Logger } from 'winston';
-import { IKnowledgeBase, IFile } from './KnowledgeBase';
+import fs
+  from 'fs';
+import fsp
+  from 'fs/promises';
+import path
+  from 'path';
+import { Logger }
+  from 'winston';
+import { IKnowledgeBase,
+         IFile }
+  from './KnowledgeBase';
 
 const modules = { path };
 
@@ -12,34 +18,52 @@ export interface IKbFilesystemSync
   dispose(): void;
 }
 
-async function stat
-  (path: string)
-  : Promise<fs.Stats | null>
+async function stat(
+    path: string
+  ): Promise<fs.Stats | null>
 {
   let st: fs.Stats | null = null;
+
   try {
-    st = await fsp.stat(path);
+    st =
+      await fsp.stat(path);
   } catch {
     // ignore
   }
+
   return st;
 }
 
-/** Enumerating filesystem files in the knowledge base folder through asynchronous generator. */
-export async function* findKbFiles
-  (log: Logger,
+/**
+ * Enumerating filesystem files in the knowledge base folder through
+ * asynchronous generator.
+ */
+export async function* findKbFiles(
+    log: Logger,
     kb: IKnowledgeBase,
-    path?: string)
-  : AsyncGenerator<IFile>
+    path?: string
+  ): AsyncGenerator<IFile>
 {
+  const context =
+    'findKbFiles';
+
   const fullPath =
-    path === undefined || path === null || path === '' || path === '.'
+    path === undefined
+    || path === null
+    || path === ''
+    || path === '.'
       ? kb.root
       : modules.path.resolve(kb.root, path);
 
-  const st = await stat(fullPath);
+  const st =
+    await stat(fullPath);
+
   if (st === null) {
-    log.debug(`[findKbFiles] failed to stat "${fullPath}".`);
+    log.debug(
+      '[%s] failed to stat "%s".',
+      context,
+      fullPath);
+
     return;
   }
 
@@ -53,30 +77,52 @@ export async function* findKbFiles
   }
 
   const all: string[] = [];
+
   try {
-    all.push(...await fsp.readdir(fullPath));
+    all.push(
+      ...await fsp.readdir(fullPath));
   } catch {
-    log.info(`[findKbFiles] failed to read the folder "${fullPath}".`);
+    log.info(
+      '[%s] failed to read the folder "%s".',
+      context,
+      fullPath);
+
     return;
   }
 
-  log.debug(`[findKbFiles] "${fullPath}" all: ${JSON.stringify(all)}`);
+  log.debug(
+    '[%s] "%s" all: %s',
+    context,
+    fullPath,
+    JSON.stringify(all));
 
   const filtered =
     all.filter(item => kb.isAccepted(modules.path.join(fullPath, item)));
 
-  log.debug(`[findKbFiles] "${fullPath}" filtered: ${JSON.stringify(filtered)}`);
+  log.debug(
+    '[%s] "%s" filtered: %s',
+    context,
+    fullPath,
+    JSON.stringify(filtered));
 
   for await (const item of filtered) {
     // item is a folder or file name with extension
 
-    const itemFullPath = modules.path.join(fullPath, item);
-    const itemRelativePath = modules.path.relative(kb.root, itemFullPath);
+    const itemFullPath =
+      modules.path.join(fullPath, item);
 
-    const st = await stat(itemFullPath);
+    const itemRelativePath =
+      modules.path.relative(kb.root, itemFullPath);
+
+    const st =
+      await stat(itemFullPath);
 
     if (st === null) {
-      log.debug(`[findKbFiles] failed to stat "${fullPath}".`);
+      log.debug(
+        '[%s] failed to stat "%s".',
+        context,
+        itemFullPath);
+
       continue;
     }
 
@@ -91,10 +137,10 @@ export async function* findKbFiles
   }
 }
 
-export async function createKbFilesystemEventsIterator
-  (log: Logger,
-    kb: IKnowledgeBase)
-  : Promise<IKbFilesystemSync>
+export async function createKbFilesystemEventsIterator(
+    log: Logger,
+    kb: IKnowledgeBase
+  ): Promise<IKbFilesystemSync>
 {
   const files = [];
   for await (const file of findKbFiles(log, kb)) {

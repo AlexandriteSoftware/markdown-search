@@ -16,19 +16,23 @@ class EditorEvent {
 }
 
 class FolderAddedEvent {
+    event: string = 'folder-added'
     path: string
     exclude: string list
 }
 
 class FolderRemovedEvent {
+    event: string = 'folder-removed'
     path: string
 }
 
 class FileUpdatedEvent {
+    event: string = 'file-updated'
     path: string
 }
 
 class FileDeletedEvent {
+    event: string = 'file-deleted'
     path: string
 }
 ```

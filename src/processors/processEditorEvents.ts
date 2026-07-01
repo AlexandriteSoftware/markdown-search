@@ -7,28 +7,28 @@ import { sep }
 import { Logger }
   from 'winston';
 import { Enqueuer }
-  from './AsyncIterableQueue';
+  from '../AsyncIterableQueue';
 import { IFile,
          IKnowledgeBase,
          KnowledgeBase }
-  from './KnowledgeBase';
+  from '../KnowledgeBase';
 import { IKbFilesystemSync,
          createKbFilesystemEventsIterator }
-  from './KbFilesystemSync';
+  from '../KbFilesystemSync';
 import { EditorEvent,
          isFolderAddedEvent,
          isFolderRemovedEvent,
          isFileUpdatedEvent,
          isFileDeletedEvent }
-  from './EditorEvents';
+  from '../EditorEvents';
 import { KbEvent }
-  from './KbEvents';
+  from '../KbEvents';
 
-export function translateEditorEventsToKbEvents(
+export function processEditorEvents(
     log: Logger,
     queue: AsyncIterable<EditorEvent>,
-    enqueuer: Enqueuer<KbEvent>)
-  : () => void
+    enqueuer: Enqueuer<KbEvent>
+  ): () => void
 {
   const context =
     'translateEditorEventsToKbEvents';
@@ -57,7 +57,7 @@ export function translateEditorEventsToKbEvents(
       if (isFolderAddedEvent(event)) {
         await addKb(
           event.path,
-          event.exclude || {});
+          event.exclude || { });
       } else if (isFolderRemovedEvent(event)) {
         await removeKb(
           event.path);

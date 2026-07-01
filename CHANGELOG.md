@@ -11,6 +11,7 @@ This file is organised according to [Keep a Changelog][1].
 - Update README.md - corrections, ref-style links, formatting changes.
 - Remove comments from tsconfig.json
 - Updated libraries to latest versions.
+- Modernise code
 
 ## 0.2.4
 

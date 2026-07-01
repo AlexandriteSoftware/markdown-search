@@ -6,16 +6,21 @@
 efficient text searching within Markdown files. This extension allows users to
 effortlessly locate specific text and generate links to it.
 
+> Built with [Alexandrite Software Library][3] - a set of high-quality,
+performant JavaScript libraries for everyday use.
+
 [1]: https://vsmarketplacebadges.dev/version/alexandritesoftware.markdown-search.png
 [2]: https://marketplace.visualstudio.com/items?itemName=alexandritesoftware.markdown-search
+[3]: https://github.com/AlexandriteSoftware/asljs
 
 ## Features
 
+- Indexes all Markdown files in the workspace for fast searching.
+- Keeps indexes up to date with changes in the workspace.
 - Allows you find words or phrases in Markdown files.
 - Allows you add links to the words or phrases you found.
 - Shows you the closest matches to your search at the top.
-- Works with multiple folders and follows your rules for skipping files and
-  folders.
+- Follows VSCode settings for ignoring files and folders.
 
 ## Installation
 
@@ -52,8 +57,8 @@ and `search.exclude` in your `settings.json` file.
 Unless the logging level is set to `none`, the extension creates
 "Markdown Full Text Search" output channel and logs its activity there.
 
-[31]: docs/demo%20-%20command%20palette.png
-[32]: docs/demo%20-%20add%20link%20from%20search%20results.gif
+[31]: <https://raw.githubusercontent.com/AlexandriteSoftware/markdown-search/refs/heads/main/docs/README_command_palette.png>
+[32]: <https://raw.githubusercontent.com/AlexandriteSoftware/markdown-search/refs/heads/main/docs/README_add_link_from_search_results.gif>
 
 ## Configuration
 
@@ -68,9 +73,6 @@ Default is `info`.
 Markdown Full Text Search is created with [MiniSearch][51], a tiny but powerful
 in-memory fulltext search engine for JavaScript, created by [Luca Ongaro][52].
 
-Markdown Full Text Search is created for you by Alexandrite Software, a software
-development consultancy based in the United Kingdom.
-
 [51]: https://github.com/lucaong/minisearch
 [52]: https://lucaongaro.eu/
 
@@ -78,4 +80,4 @@ development consultancy based in the United Kingdom.
 
 See the [CHANGELOG][61] for the details about the changes in each release.
 
-[61]: CHANGELOG.md
+[61]: <./CHANGELOG.md>

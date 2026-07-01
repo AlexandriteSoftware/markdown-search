@@ -4,19 +4,19 @@ import MiniSearch
   from 'minisearch';
 import { Logger }
   from 'winston';
-import { MiniSearchCommand,
+import { MiniSearchEvent,
          isIndexFile,
          isRemoveFile }
-  from './MiniSearchCommands';
+  from '../MiniSearchEvents';
 
-export function processMiniSearchCommands(
+export function processMiniSearchEvents(
     log: Logger,
-    queue: AsyncIterable<MiniSearchCommand>,
+    queue: AsyncIterable<MiniSearchEvent>,
     miniSearch: MiniSearch
   ): () => void
 {
   const context =
-    'processMiniSearchCommands';
+    'processMiniSearchEvents';
 
   let disposed = false;
 

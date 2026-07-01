@@ -7,10 +7,10 @@
     "search"
   ],
   "publisher": "AlexandriteSoftware",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.125.0"
   },
   "categories": [
     "Other"
@@ -69,7 +69,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
+    "test": "vscode-test",
     "test-compile": "tsc -p ./",
     "package": "vsce package",
     "publish": "vsce publish"
@@ -81,9 +81,11 @@
     "@typescript-eslint/eslint-plugin": "^8.62.1",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
+    "esbuild": "^0.28.1",
     "eslint": "^10.6.0",
     "mocha": "^11.7.6",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vsce": "^2.15.0"
   },
   "dependencies": {
     "glob": "^13.0.6",

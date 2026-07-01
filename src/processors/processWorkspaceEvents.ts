@@ -3,17 +3,18 @@ import vscode
 import { Logger }
   from 'winston';
 import { Enqueuer }
-  from './AsyncIterableQueue';
-import { EditorEvent }
-  from './EditorEvents';
+  from '../AsyncIterableQueue';
+import { EditorEvent,
+         FolderAddedEvent }
+  from '../EditorEvents';
 
-export function translateWorkspaceToEditorEvents(
+export function processWorkspaceEvents(
     log: Logger,
     enqueuer: Enqueuer<EditorEvent>
   ): () => void
 {
   const context =
-    'translateWorkspaceToEditorEvents';
+    'processWorkspaceEvents';
 
   const ws =
     vscode.workspace;
@@ -140,12 +141,12 @@ export function translateWorkspaceToEditorEvents(
 
   return dispose;
 
-  function enqueue(
-      event: EditorEvent
+  function enqueue<T extends EditorEvent>(
+      event: T
     ): void
   {
     log.debug(
-      '[%s] equeue: %s',
+      '[%s] enqueue: %s',
       context,
       JSON.stringify(event));
 
@@ -167,7 +168,7 @@ export function translateWorkspaceToEditorEvents(
         configuration.get('files.exclude') as Record<string, boolean>,
         configuration.get('search.exclude') as Record<string, boolean>)
 
-    const event: EditorEvent =
+    const event: FolderAddedEvent =
       { event: 'folder-added',
         path: folder.fsPath,
         exclude };

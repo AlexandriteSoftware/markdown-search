@@ -32,7 +32,7 @@ Make sure the versions are updated in `package.json`, `CHANGELOG.md`, and
 ```PowerShell
 Remove-Item -Path .\out -Recurse -Force
 Remove-Item -Path .\dist -Recurse -Force
-vsce package
+npx vsce package
 npm run test
 vsce publish
 ```
