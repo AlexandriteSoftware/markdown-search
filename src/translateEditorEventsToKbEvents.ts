@@ -1,42 +1,48 @@
-import fs from 'fs';
-import fsp from 'fs/promises';
-import { sep } from 'path';
-import { Logger } from 'winston';
-import { Enqueuer } from './AsyncIterableQueue';
-import
-{
-  IFile,
-  IKnowledgeBase,
-  KnowledgeBase
-} from './KnowledgeBase';
-import
-{
-  IKbFilesystemSync,
-  createKbFilesystemEventsIterator
-} from './KbFilesystemSync';
-import
-{
-  EditorEvent,
-  isFolderAddedEvent,
-  isFolderRemovedEvent,
-  isFileUpdatedEvent,
-  isFileDeletedEvent
-} from './EditorEvents';
-import { KbEvent } from './KbEvents';
+import fs
+  from 'fs';
+import fsp
+  from 'fs/promises';
+import { sep }
+  from 'path';
+import { Logger }
+  from 'winston';
+import { Enqueuer }
+  from './AsyncIterableQueue';
+import { IFile,
+         IKnowledgeBase,
+         KnowledgeBase }
+  from './KnowledgeBase';
+import { IKbFilesystemSync,
+         createKbFilesystemEventsIterator }
+  from './KbFilesystemSync';
+import { EditorEvent,
+         isFolderAddedEvent,
+         isFolderRemovedEvent,
+         isFileUpdatedEvent,
+         isFileDeletedEvent }
+  from './EditorEvents';
+import { KbEvent }
+  from './KbEvents';
 
-export function translateEditorEventsToKbEvents
-  (log: Logger,
+export function translateEditorEventsToKbEvents(
+    log: Logger,
     queue: AsyncIterable<EditorEvent>,
     enqueuer: Enqueuer<KbEvent>)
   : () => void
 {
-  const context = "translateEditorEventsToKbEvents";
+  const context =
+    'translateEditorEventsToKbEvents';
 
-  /** The list of loaded knowledge bases. Each corresponds to the workspace's folder. */
+  /**
+   * The list of loaded knowledge bases. Each corresponds to
+   * the workspace's folder.
+   * */
   const knowledgeBases: IKnowledgeBase[] = [];
 
-  /** The list of filesystem watchers. Each corresponds to the workspace's folder
-   *  and the loaded knowledge base associated with it. */
+  /**
+   * The list of filesystem watchers. Each corresponds to
+   * the workspace's folder and the knowledge base associated with it.
+   */
   const kbFsSyncs: IKbFilesystemSync[] = [];
 
   let disposed = false;
@@ -49,155 +55,232 @@ export function translateEditorEventsToKbEvents
       }
 
       if (isFolderAddedEvent(event)) {
-        await addKb(event.path, event.exclude || {});
+        await addKb(
+          event.path,
+          event.exclude || {});
       } else if (isFolderRemovedEvent(event)) {
-        await removeKb(event.path);
+        await removeKb(
+          event.path);
       } else if (isFileUpdatedEvent(event)) {
-        await addFile(event.path);
+        await addFile(
+          event.path);
       } else if (isFileDeletedEvent(event)) {
-        await deleteFile(event.path);
+        await deleteFile(
+          event.path);
       }
     }
   })();
 
   return () => { disposed = true; };
 
-  async function addKb
-    (root: string,
-      exclude: { [key: string]: boolean })
-    : Promise<IKnowledgeBase | null>
+  async function addKb(
+      root: string,
+      exclude: { [key: string]: boolean }
+    ): Promise<IKnowledgeBase | null>
   {
-    log.info(`[${context}] Adding knowledge base: ${root}`);
+    log.info(
+      '[%s] Adding knowledge base: %s',
+      context,
+      root);
 
-    const existing = knowledgeBases.find(kb => kb.root === root);
+    const existing =
+      knowledgeBases.find(
+        kb =>
+          kb.root === root);
+
     if (existing) {
-      log.info(`[${context}] The knowledge base "${root}" has been added already.`);
+      log.info(
+        '[%s] The knowledge base "%s" has been added already.',
+        context,
+        root);
+
       return null;
     }
 
-    const st = await stat(root);
+    const st =
+      await stat(root);
+
     if (st === null) {
-      log.info(`[${context}] The knowledge base "${root}" does not exist.`);
+      log.info(
+        '[%s] The knowledge base "%s" does not exist.',
+        context,
+        root);
+
       return null;
     }
 
-    const kb = new KnowledgeBase(root, exclude);
+    const kb =
+      new KnowledgeBase(
+        root,
+        exclude);
+
     knowledgeBases.push(kb);
 
-    enqueuer.enqueue({
-      event: 'kb-added',
-      exclude,
-      root: kb.root,
-      files: kb.files.map(file => file.path)
-    });
+    enqueuer.enqueue(
+      { event: 'kb-added',
+        exclude,
+        root: kb.root,
+        files: kb.files.map(file => file.path) });
 
-    kb.onFilesChanged((files) =>
-    {
-      const isMarkdownFile =
-        (file: IFile) => file.type === 'markdown';
+    kb.onFilesChanged(
+      files =>
+      {
+        const isMarkdownFile =
+          (file: IFile) =>
+            file.type === 'markdown';
 
-      for (const file of (files?.removed || []).filter(isMarkdownFile)) {
-        enqueuer.enqueue({
-          event: 'kb-file-removed',
-          path: file.path,
-          root: kb.root
-        });
-      }
+        const removedMarkdownFiles =
+          (files?.removed || []).filter(isMarkdownFile);
 
-      for (const file of (files?.added || []).filter(isMarkdownFile)) {
-        enqueuer.enqueue({
-          event: 'kb-file-added',
-          path: file.path,
-          root: kb.root
-        });
-      }
-    });
+        for (const file of removedMarkdownFiles) {
+          enqueuer.enqueue(
+            { event: 'kb-file-removed',
+              path: file.path,
+              root: kb.root });
+        }
 
-    const sync = await createKbFilesystemEventsIterator(log, kb);
+        const addedMarkdownFiles =
+          (files?.added || []).filter(isMarkdownFile);
+
+        for (const file of addedMarkdownFiles) {
+          enqueuer.enqueue(
+            { event: 'kb-file-added',
+              path: file.path,
+              root: kb.root });
+        }
+      });
+
+    const sync =
+      await createKbFilesystemEventsIterator(
+        log,
+        kb);
+
     kbFsSyncs.push(sync);
 
     return kb;
   }
 
-  async function removeKb
-    (root: string)
-    : Promise<IKnowledgeBase | null>
+  async function removeKb(
+      root: string
+    ): Promise<IKnowledgeBase | null>
   {
-    const kb = knowledgeBases.find(kb => kb.root === root);
+    const kb =
+      knowledgeBases.find(
+        kb =>
+          kb.root === root);
+
     if (!kb) {
       return null;
     }
 
-    enqueuer.enqueue({
-      event: 'kb-removed',
-      root: kb.root,
-      files: kb.files.map(file => file.path)
-    });
+    enqueuer.enqueue(
+      { event: 'kb-removed',
+        root: kb.root,
+        files: kb.files.map(file => file.path) });
 
-    knowledgeBases.splice(knowledgeBases.indexOf(kb), 1);
+    knowledgeBases.splice(
+      knowledgeBases.indexOf(kb),
+      1);
 
-    const sync = kbFsSyncs.find(item => item.kb === kb);
+    const sync =
+      kbFsSyncs.find(
+        item =>
+          item.kb === kb);
+
     if (sync) {
       sync.dispose();
-      kbFsSyncs.splice(kbFsSyncs.indexOf(sync), 1);
+
+      kbFsSyncs.splice(
+        kbFsSyncs.indexOf(sync),
+        1);
     }
 
     return kb;
   }
 
-  async function addFile
-    (path: string)
-    : Promise<void>
+  async function addFile(
+      path: string
+    ): Promise<void>
   {
-    const kb = knowledgeBases.find(kb => path.startsWith(kb.root + sep));
+    const kb =
+      knowledgeBases.find(
+        kb =>
+          path.startsWith(
+            kb.root + sep));
+
     if (!kb) {
       return;
     }
 
-    const st = await stat(path);
+    const st =
+      await stat(path);
+
     if (st === null) {
-      log.debug(`path: failed to stat "${path}".`);
+      log.debug(
+        'path: failed to stat "%s".',
+        path);
+
       return;
     }
 
-    const existing = kb.filesWithFilesystemPath(path);
+    const existing =
+      kb.filesWithFilesystemPath(path);
+
     kb.removeFiles(existing);
 
-    const file = kb.createFile(path, st.mtime);
+    const file =
+      kb.createFile(
+        path,
+        st.mtime);
+
     if (!file) {
       return;
     }
 
-    kb.addFiles([file]);
+    kb.addFiles(
+      [ file ]);
   }
 
-  async function deleteFile
-    (path: string)
-    : Promise<void>
+  async function deleteFile(
+      path: string
+    ): Promise<void>
   {
-    const kb = knowledgeBases.find(kb => path.startsWith(kb.root + sep));
+    const kb =
+      knowledgeBases.find(
+        kb =>
+          path.startsWith(
+            kb.root + sep));
+
     if (!kb) {
       return;
     }
 
-    const file = kb.files.find(file => file.fullPath === path);
+    const file =
+      kb.files.find(
+        file =>
+          file.fullPath === path);
+
     if (!file) {
       return;
     }
 
-    kb.removeFiles([file]);
+    kb.removeFiles(
+      [ file ]);
   }
 }
 
-async function stat
-  (path: string)
-  : Promise<fs.Stats | null>
+async function stat(
+    path: string
+  ): Promise<fs.Stats | null>
 {
   let st: fs.Stats | null = null;
+
   try {
-    st = await fsp.stat(path);
+    st =
+      await fsp.stat(path);
   } catch {
     // ignore
   }
+
   return st;
 }

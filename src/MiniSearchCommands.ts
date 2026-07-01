@@ -5,9 +5,9 @@ export interface IndexFile
   root: string;
 }
 
-export function isIndexFile
-  (object: any)
-  : object is IndexFile
+export function isIndexFile(
+    object: any
+  ): object is IndexFile
 {
   return object.action === 'index';
 }
@@ -19,13 +19,13 @@ export interface RemoveFile
   root: string;
 }
 
-export function isRemoveFile
-  (object: any)
-  : object is RemoveFile
+export function isRemoveFile(
+    object: any
+  ): object is RemoveFile
 {
   return object.action === 'remove';
 }
 
 export type MiniSearchCommand =
-  IndexFile
+  | IndexFile
   | RemoveFile;

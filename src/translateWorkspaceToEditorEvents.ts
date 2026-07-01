@@ -1,93 +1,177 @@
-import vscode from 'vscode';
-import { Logger } from 'winston';
-import { Enqueuer } from './AsyncIterableQueue';
-import { EditorEvent } from './EditorEvents';
+import vscode
+  from 'vscode';
+import { Logger }
+  from 'winston';
+import { Enqueuer }
+  from './AsyncIterableQueue';
+import { EditorEvent }
+  from './EditorEvents';
 
-export function translateWorkspaceToEditorEvents
-  (log: Logger,
-    enqueuer: Enqueuer<EditorEvent>)
-  : (() => void)
+export function translateWorkspaceToEditorEvents(
+    log: Logger,
+    enqueuer: Enqueuer<EditorEvent>
+  ): () => void
 {
-  const context = 'translateWorkspaceToEditorEvents';
+  const context =
+    'translateWorkspaceToEditorEvents';
 
-  const ws = vscode.workspace;
+  const ws =
+    vscode.workspace;
 
-  const disposables: vscode.Disposable[] = [];
+  const disposables: vscode.Disposable[] = [ ];
 
-  ws.onDidChangeConfiguration(event =>
-  {
-    log.debug(`[${context}] onDidChangeConfiguration: ${JSON.stringify(event)}`);
+  ws.onDidChangeConfiguration(
+    event =>
+    {
+      log.debug(
+        '[%s] onDidChangeConfiguration: %s',
+        context,
+        JSON.stringify(event));
 
-    for (const folder of ws.workspaceFolders || []) {
-      const filesExcludeChanged = event.affectsConfiguration('files.exclude', folder);
-      const searchExcludeChanged = event.affectsConfiguration('search.exclude', folder);
-      if (filesExcludeChanged || searchExcludeChanged) {
-        enqueue({ event: 'folder-removed', path: folder.uri.fsPath });
-        addKb(folder.uri);
+      for (const folder of ws.workspaceFolders || []) {
+        const filesExcludeChanged =
+          event.affectsConfiguration(
+            'files.exclude',
+            folder);
+
+        const searchExcludeChanged =
+          event.affectsConfiguration(
+            'search.exclude',
+            folder);
+
+        if (filesExcludeChanged
+            || searchExcludeChanged)
+        {
+          enqueue(
+            { event: 'folder-removed',
+              path: folder.uri.fsPath });
+
+          addKb(
+            folder.uri);
+        }
       }
-    }
-  }, null, disposables);
+    },
+    null,
+    disposables);
 
-  ws.onDidChangeWorkspaceFolders(event =>
-  {
-    log.debug(`[${context}] onDidChangeWorkspaceFolders: ${JSON.stringify(event)}`);
+  ws.onDidChangeWorkspaceFolders(
+    event =>
+    {
+      log.debug(
+        '[%s] onDidChangeWorkspaceFolders: %s',
+        context,
+        JSON.stringify(event));
 
-    for (const folder of event.removed || []) {
-      enqueue({ event: 'folder-removed', path: folder.uri.fsPath });
-    }
+      for (const folder of event.removed || []) {
+        enqueue(
+          { event: 'folder-removed',
+            path: folder.uri.fsPath });
+      }
 
-    for (const folder of event.added || []) {
-      addKb(folder.uri);
-    }
-  }, null, disposables);
+      for (const folder of event.added || []) {
+        addKb(
+          folder.uri);
+      }
+    },
+    null,
+    disposables);
 
-  ws.onDidCreateFiles(event =>
-  {
-    log.debug(`[${context}] onDidCreateFiles: ${JSON.stringify(event)}`);
-    event.files.forEach(file => enqueue({ event: 'file-updated', path: file.fsPath }));
-  }, null, disposables);
+  ws.onDidCreateFiles(
+    event =>
+    {
+      log.debug(
+        '[%s] onDidCreateFiles: %s',
+        context,
+        JSON.stringify(event));
 
-  ws.onDidDeleteFiles(event =>
-  {
-    log.debug(`[${context}] onDidDeleteFiles: ${JSON.stringify(event)}`);
-    event.files.forEach(file => enqueue({ event: 'file-deleted', path: file.fsPath }));
-  }, null, disposables);
+      event.files.forEach(
+        file =>
+          enqueue(
+            { event: 'file-updated',
+              path: file.fsPath }));
+    },
+    null,
+    disposables);
 
-  ws.onDidSaveTextDocument(event =>
-  {
-    log.debug(`[${context}] onDidSaveTextDocument: ${JSON.stringify(event)}`);
-    enqueue({ event: 'file-updated', path: event.uri.fsPath });
-  }, null, disposables);
+  ws.onDidDeleteFiles(
+    event =>
+    {
+      log.debug(
+        '[%s] onDidDeleteFiles: %s',
+        context,
+        JSON.stringify(event));
+
+      event.files.forEach(
+        file =>
+          enqueue(
+            { event: 'file-deleted',
+              path: file.fsPath }));
+    },
+    null,
+    disposables);
+
+  ws.onDidSaveTextDocument(
+    event =>
+    {
+      log.debug(
+        '[%s] onDidSaveTextDocument: %s',
+        context,
+        JSON.stringify(event));
+
+      enqueue(
+        { event: 'file-updated',
+          path: event.uri.fsPath });
+    },
+    null,
+    disposables);
 
   for (const folder of ws.workspaceFolders || []) {
-    addKb(folder.uri);
+    addKb(
+      folder.uri);
   }
 
-  return () =>
-  {
-    for (const item of disposables) {
-      item.dispose();
-    }
-  };
+  const dispose =
+    (): void =>
+    {
+      for (const item of disposables) {
+        item.dispose();
+      }
+    };
 
-  function enqueue
-    (event: EditorEvent)
+  return dispose;
+
+  function enqueue(
+      event: EditorEvent
+    ): void
   {
-    log.debug(`[${context}] equeue: ${JSON.stringify(event)}`);
+    log.debug(
+      '[%s] equeue: %s',
+      context,
+      JSON.stringify(event));
+
     enqueuer.enqueue(event);
   }
 
-  function addKb
-    (folder: vscode.Uri)
+  function addKb(
+      folder: vscode.Uri
+    ): void
   {
-    const configuration = ws.getConfiguration(undefined, folder);
-    const filesExclude = configuration.get('files.exclude') as { [key: string]: boolean; };
-    const searchExclude = configuration.get('search.exclude') as { [key: string]: boolean; };
+    const configuration =
+      ws.getConfiguration(
+        undefined,
+        folder);
 
-    enqueue({
-      event: 'folder-added',
-      path: folder.fsPath,
-      exclude: Object.assign({}, filesExclude, searchExclude)
-    });
-  };
+    const exclude: Record<string, boolean> =
+      Object.assign(
+        { },
+        configuration.get('files.exclude') as Record<string, boolean>,
+        configuration.get('search.exclude') as Record<string, boolean>)
+
+    const event: EditorEvent =
+      { event: 'folder-added',
+        path: folder.fsPath,
+        exclude };
+
+    enqueue(event);
+  }
 }

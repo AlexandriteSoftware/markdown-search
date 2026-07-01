@@ -7,7 +7,7 @@
     "search"
   ],
   "publisher": "AlexandriteSoftware",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "license": "MIT",
   "engines": {
     "vscode": "^1.80.0"
@@ -75,22 +75,13 @@
     "publish": "vsce publish"
   },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.1",
-    "@types/node": "16.x",
-    "@types/vscode": "^1.80.0",
-    "@typescript-eslint/eslint-plugin": "^5.59.1",
-    "@typescript-eslint/parser": "^5.59.1",
-    "@vscode/test-electron": "^2.3.0",
-    "esbuild": "^0.18.13",
-    "eslint": "^8.39.0",
-    "glob": "^8.1.0",
-    "mocha": "^10.2.0",
-    "typescript": "^5.0.4"
+    "@types/node": "^26.0.1",
+    "@types/vscode": "^1.125.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
-    "minimatch": "^3.1.2",
-    "minisearch": "^6.1.0",
-    "winston": "^3.10.0"
+    "glob": "^13.0.6",
+    "minisearch": "^7.2.0",
+    "winston": "^3.19.0"
   }
 }

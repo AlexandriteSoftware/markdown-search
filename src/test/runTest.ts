@@ -1,11 +1,12 @@
-import path from 'path';
-import fs from 'fs/promises';
-import
-{
-  removeTestTempRootDir,
-  getTestTempDir
-} from './support/testTempDirs';
-import { runTests } from '@vscode/test-electron';
+import path
+  from 'path';
+import fs
+  from 'fs/promises';
+import { removeTestTempRootDir,
+         getTestTempDir }
+  from './support/testTempDirs';
+import { runTests }
+  from '@vscode/test-electron';
 
 async function main()
 {

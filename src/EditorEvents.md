@@ -1,7 +1,7 @@
-EditorEvents
-===
+# EditorEvents
 
-`EditorEvents` defines data objects to support a queue of the editor events. The editor events are based on the VS Code workspace events.
+`EditorEvents` defines data objects to support a queue of the editor events.
+The editor events are based on the VS Code workspace events.
 
 ```mermaid
 classDiagram

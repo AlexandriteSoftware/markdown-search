@@ -1,22 +1,43 @@
-import fs from 'fs';
-import fsp from 'fs/promises';
-import os from 'os';
-import path from 'path';
-import { retry } from './controlFlowHelpers';
+import fs
+  from 'fs';
+import fsp
+  from 'fs/promises';
+import os
+  from 'os';
+import path
+  from 'path';
+import { retry }
+  from './controlFlowHelpers';
 
-export function getTestTempRootDir()
+export function getTestTempRootDir(
+  ): string
 {
-  const dir = path.join(os.tmpdir(), 'test-markdown-search');
-  fs.existsSync(dir) || fs.mkdirSync(dir);
+  const dir =
+    path.join(
+      os.tmpdir(),
+      'test-markdown-search');
+
+  (fs.existsSync(dir)
+   || fs.mkdirSync(dir));
+
   return dir;
 }
 
-export function getTestTempDir()
+export function getTestTempDir(
+  ): string
 {
-  return fs.mkdtempSync(getTestTempRootDir() + path.sep);
+  return fs.mkdtempSync(
+    getTestTempRootDir()
+    + path.sep);
 }
 
-export async function removeTestTempRootDir()
+export async function removeTestTempRootDir(
+  ): Promise<void>
 {
-  await retry(() => fsp.rm(getTestTempRootDir(), { recursive: true, force: true }));
+  await retry(
+    () =>
+      fsp.rm(
+        getTestTempRootDir(),
+        { recursive: true,
+          force: true }));
 }

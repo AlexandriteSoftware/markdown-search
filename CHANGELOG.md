@@ -2,7 +2,15 @@
 
 All notable changes to the extension will be documented in this file.
 
-This file is organised according to [Keep a Changelog](http://keepachangelog.com/).
+This file is organised according to [Keep a Changelog][1].
+
+[1]: http://keepachangelog.com/
+
+## 0.2.5
+
+- Update README.md - corrections, ref-style links, formatting changes.
+- Remove comments from tsconfig.json
+- Updated libraries to latest versions.
 
 ## 0.2.4
 

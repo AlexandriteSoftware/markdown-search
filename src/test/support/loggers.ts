@@ -1,29 +1,27 @@
-import
-  {
-    Logger,
-    createLogger,
-    transports,
-    format
-  } from 'winston';
+import { Logger,
+         createLogger,
+         transports,
+         format }
+  from 'winston';
 
 export function loggers()
 {
-  return {
-    getNullLogger,
-    getDebugConsoleLogger: getDebugConsoleLogger
-  };
+  return { getNullLogger,
+           getDebugConsoleLogger };
 }
 
-export function getNullLogger(): Logger
+export function getNullLogger(
+  ): Logger
 {
-  return createLogger({ silent: true });
+  return createLogger(
+    { silent: true });
 }
 
-export function getDebugConsoleLogger(): Logger
+export function getDebugConsoleLogger(
+  ): Logger
 {
-  return createLogger({
-    level: 'debug',
-    format: format.simple(),
-    transports: [new transports.Console()]
-  });
+  return createLogger(
+    { level: 'debug',
+      format: format.simple(),
+      transports: [ new transports.Console() ] });
 }
