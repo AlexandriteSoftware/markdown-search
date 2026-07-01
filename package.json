@@ -79,12 +79,13 @@
     "@types/node": "^26.0.1",
     "@types/vscode": "^1.125.0",
     "@typescript-eslint/eslint-plugin": "^8.62.1",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
     "eslint": "^10.6.0",
     "mocha": "^11.7.6",
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@vscode/test-electron": "^3.0.0",
     "glob": "^13.0.6",
     "minimatch": "^10.2.5",
     "minisearch": "^7.2.0",
