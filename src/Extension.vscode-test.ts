@@ -1,15 +1,13 @@
 import assert
   from 'node:assert';
-import fs
-  from 'node:fs';
 import path
   from 'node:path';
 import { setTimeout }
   from 'node:timers/promises';
+import { TmpDir }
+  from 'asljs-tmpdir';
 import vscode
   from 'vscode';
-import { getTestTempDir }
-  from './support/testTempDirs';
 import { replaceWorkspaceFolder }
   from './support/workspaceHelpers';
 
@@ -26,17 +24,15 @@ suite(
       {
         this.timeout(10000);
 
-        const tmpDir =
-          getTestTempDir();
+        await using tmpDir =
+          new TmpDir();
 
-        fs.writeFileSync(
-          path.join(
-            tmpDir,
-            'test.md'),
+        await tmpDir.writeText(
+          'test.md',
           '# Test\n\nThis is a test.');
 
         const workspaceFolder =
-          await replaceWorkspaceFolder(tmpDir);
+          await replaceWorkspaceFolder(tmpDir.path);
 
         const extension =
           vscode.extensions.getExtension(
@@ -91,22 +87,18 @@ suite(
 
         const ws = vscode.workspace;
 
-        const tmpDir = getTestTempDir();
+        await using tmpDir = new TmpDir();
 
-        fs.writeFileSync(
-          path.join(
-            tmpDir,
-            'test.md'),
+        await tmpDir.writeText(
+          'test.md',
           '# Test\n\nThis is a test.');
 
-        fs.writeFileSync(
-          path.join(
-            tmpDir,
-            'edit.md'),
+        await tmpDir.writeText(
+          'edit.md',
           '');
 
         const workspaceFolder =
-          await replaceWorkspaceFolder(tmpDir);
+          await replaceWorkspaceFolder(tmpDir.path);
 
         const extension =
           vscode.extensions.getExtension(
@@ -124,7 +116,7 @@ suite(
 
         await setTimeout(2000);
 
-        const fileUri = vscode.Uri.file(path.join(tmpDir, 'edit.md'));
+        const fileUri = vscode.Uri.file(path.join(tmpDir.path, 'edit.md'));
         const document = await ws.openTextDocument(fileUri);
         const editor = await vscode.window.showTextDocument(document);
         editor.edit(editBuilder => { editBuilder.insert(new vscode.Position(0, 0), ''); });

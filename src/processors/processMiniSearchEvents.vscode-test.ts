@@ -1,7 +1,5 @@
 import assert
   from 'node:assert';
-import fs
-  from 'node:fs';
 import path
   from 'node:path';
 import vscode
@@ -16,8 +14,8 @@ import { processMiniSearchEvents }
   from './processMiniSearchEvents';
 import { AsyncIterableQueue }
   from '../AsyncIterableQueue';
-import { getTestTempDir }
-  from '../support/testTempDirs';
+import { TmpDir }
+  from 'asljs-tmpdir';
 
 suite(
   'processMiniSearchEvents Tests',
@@ -37,21 +35,22 @@ suite(
         const queue = new AsyncIterableQueue<MiniSearchEvent>();
         processMiniSearchEvents(logger, queue, index);
 
-        const tmpDir = getTestTempDir();
-        fs.writeFileSync(path.join(tmpDir, 'test.md'), 'test');
+        await using tmpDir = new TmpDir();
+
+        await tmpDir.writeText('test.md', 'test');
 
         // add the file to the index
-        queue.enqueue({ event: 'index', path: '/test.md', root: tmpDir });
+        queue.enqueue({ event: 'index', path: '/test.md', root: tmpDir.path });
         await new Promise(resolve => setTimeout(resolve, 100));
         assert.strictEqual(index.search('test').length, 1);
 
         // remove the file from the index
-        queue.enqueue({ event: 'remove', path: '/test.md', root: tmpDir });
+        queue.enqueue({ event: 'remove', path: '/test.md', root: tmpDir.path });
         await new Promise(resolve => setTimeout(resolve, 100));
         assert.strictEqual(index.search('test').length, 0);
 
         // add it second time
-        queue.enqueue({ event: 'index', path: '/test.md', root: tmpDir });
+        queue.enqueue({ event: 'index', path: '/test.md', root: tmpDir.path });
         await new Promise(resolve => setTimeout(resolve, 100));
         assert.strictEqual(index.search('test').length, 1);
 
@@ -65,13 +64,15 @@ suite(
         const queue = new AsyncIterableQueue<MiniSearchEvent>();
         processMiniSearchEvents(logger, queue, index);
 
-        const tmpDir = getTestTempDir();
-        fs.writeFileSync(path.join(tmpDir, 'test1.md'), 'test - ok');
-        fs.writeFileSync(path.join(tmpDir, 'test2.md'), 'asdf - ok');
+        await using tmpDir =
+          new TmpDir();
+
+        await tmpDir.writeText('test1.md', 'test - ok');
+        await tmpDir.writeText('test2.md', 'asdf - ok');
 
         // add the file to the index
-        queue.enqueue({ event: 'index', path: '/test1.md', root: tmpDir });
-        queue.enqueue({ event: 'index', path: '/test2.md', root: tmpDir });
+        queue.enqueue({ event: 'index', path: '/test1.md', root: tmpDir.path });
+        queue.enqueue({ event: 'index', path: '/test2.md', root: tmpDir.path });
         await new Promise(resolve => setTimeout(resolve, 100));
 
         assert.strictEqual(index.search('test').length, 1);
@@ -79,7 +80,7 @@ suite(
         assert.strictEqual(index.search('ok').length, 2);
 
         // remove the file from the index
-        queue.enqueue({ event: 'remove', path: '/test1.md', root: tmpDir });
+        queue.enqueue({ event: 'remove', path: '/test1.md', root: tmpDir.path });
         await new Promise(resolve => setTimeout(resolve, 100));
 
         assert.strictEqual(index.search('test').length, 0);
@@ -96,10 +97,10 @@ suite(
         const queue = new AsyncIterableQueue<MiniSearchEvent>();
         processMiniSearchEvents(logger, queue, index);
 
-        const tmpDir = getTestTempDir();
+        await using tmpDir = new TmpDir();
 
         // remove the file from the index
-        queue.enqueue({ event: 'remove', path: '/test1.md', root: tmpDir });
+        queue.enqueue({ event: 'remove', path: path.join(tmpDir.path, 'test1.md'), root: tmpDir.path });
         await new Promise(resolve => setTimeout(resolve, 100));
 
         assert.ok(true);
@@ -112,13 +113,15 @@ suite(
         const queue = new AsyncIterableQueue<MiniSearchEvent>();
         processMiniSearchEvents(logger, queue, index);
 
-        const tmpDir = getTestTempDir();
-        fs.writeFileSync(path.join(tmpDir, 'test1.md'), 'test - ok');
-        fs.writeFileSync(path.join(tmpDir, 'test2.md'), 'asdf - ok');
+        await using tmpDir =
+          new TmpDir();
+        
+        await tmpDir.writeText('test1.md', 'test - ok');
+        await tmpDir.writeText('test2.md', 'asdf - ok');
 
         // add the file to the index
-        queue.enqueue({ event: 'index', path: '/test1.md', root: tmpDir });
-        queue.enqueue({ event: 'index', path: '/test2.md', root: tmpDir });
+        queue.enqueue({ event: 'index', path: '/test1.md', root: tmpDir.path });
+        queue.enqueue({ event: 'index', path: '/test2.md', root: tmpDir.path });
         await new Promise(resolve => setTimeout(resolve, 100));
 
         assert.strictEqual(index.search('test').length, 1);

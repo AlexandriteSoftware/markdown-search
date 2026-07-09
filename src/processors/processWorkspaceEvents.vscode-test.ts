@@ -12,8 +12,8 @@ import { EditorEvent,
   from '../EditorEvents';
 import { processWorkspaceEvents }
   from './processWorkspaceEvents';
-import { getTestTempDir }
-  from '../support/testTempDirs';
+import { TmpDir }
+  from 'asljs-tmpdir';
 import { replaceWorkspaceFolder }
   from '../support/workspaceHelpers';
 import { loggers }
@@ -37,10 +37,10 @@ suite(
         const ws = vscode.workspace;
 
         logger.info('create a temporary folder for test workspace files');
-        const tmpFolder = getTestTempDir();
+        await using tmpFolder = new TmpDir();
 
         logger.info('add a file to the temp workspace');
-        const fileUri = vscode.Uri.file(path.join(tmpFolder, 'test.txt'));
+        const fileUri = vscode.Uri.file(path.join(tmpFolder.path, 'test.txt'));
         await ws.fs.writeFile(fileUri, Buffer.from('test'));
 
         const queue = new AsyncIterableQueue<EditorEvent>();
@@ -52,7 +52,7 @@ suite(
         const iterator = queue[Symbol.asyncIterator]();
 
         logger.info('set the current workspace to the temp folder (remove all other folders)');
-        const folder = await replaceWorkspaceFolder(tmpFolder);
+        const folder = await replaceWorkspaceFolder(tmpFolder.path);
 
         await new Promise(resolve => setTimeout(resolve, 500));
 

@@ -12,7 +12,7 @@
   "js/ts.format.placeOpenBraceOnNewLineForFunctions": true,
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
-    "*.ts": "$(capture).d.ts, $(capture).test.ts, $(capture).md",
+    "*.ts": "$(capture).d.ts, $(capture).test.ts, $(capture).vscode-test.ts, $(capture).md",
     "*.js": "$(capture).d.ts, $(capture).js.map, $(capture).d.ts.map",
     "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml"
   }

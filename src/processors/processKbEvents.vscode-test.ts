@@ -4,12 +4,10 @@ import vscode
   from 'vscode';
 import path
   from 'node:path'
-import fsp
-  from 'node:fs/promises';
 import { loggers }
   from '../support/loggers';
-import { getTestTempDir }
-  from '../support/testTempDirs';
+import { TmpDir }
+  from 'asljs-tmpdir';
 import { AsyncIterableQueue }
   from '../AsyncIterableQueue';
 import { KbEvent,
@@ -36,9 +34,9 @@ suite(
       {
         this.timeout(10000);
 
-        const tmpFolder = getTestTempDir();
+        await using tmpDir = new TmpDir();
 
-        await fsp.writeFile(path.join(tmpFolder, 'test.md'), 'test');
+        await tmpDir.writeText('test.md', 'test');
 
         const input = new AsyncIterableQueue<KbEvent>();
         const output = new AsyncIterableQueue<MiniSearchEvent>();
@@ -47,16 +45,16 @@ suite(
 
         input.enqueue<KbAddedEvent>(
           { event: 'kb-added',
-            root: tmpFolder,
-            files: [ '/test.md' ],
+            root: tmpDir.path,
+            files: [ path.join(tmpDir.path, 'test.md') ],
             exclude: { } });
 
         const result =
           (await output[Symbol.asyncIterator]().next()).value as IndexFile;
 
         assert.strictEqual(result.event, 'index');
-        assert.strictEqual(result.path, '/test.md');
-        assert.strictEqual(result.root, tmpFolder);
+        assert.strictEqual(result.path, path.join(tmpDir.path, 'test.md'));
+        assert.strictEqual(result.root, tmpDir.path);
 
         dispose();
       });

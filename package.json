@@ -61,18 +61,20 @@
     }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:dist": "tsc -p tsconfig.dist.json",
+    "build:out": "tsc -p tsconfig.out.json",
+    "watch:out": "tsc -watch -p tsconfig.out.json",
     "vscode:prepublish": "npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./src/Extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "vscode-test",
+    "test": "node --test build/**/*.test.js",
+    "test:vscode": "vscode-test",
     "package": "vsce package",
     "publish": "vsce publish",
-    "all": "npm run compile && npm run lint && npm run test"
+    "all": "npm run build:out && npm run lint && npm run test:vscode"
   },
   "dependencies": {
     "glob": "^13.0.6",
@@ -88,6 +90,7 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "^3.9.2",
+    "asljs-tmpdir": "^0.1.10",
     "esbuild": "^0.28.1",
     "eslint": "^10.6.0",
     "mocha": "^11.7.6",

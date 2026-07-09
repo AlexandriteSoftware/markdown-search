@@ -86,6 +86,12 @@ export class AsyncIterableQueue<T>
     }
   }
 
+  [Symbol.dispose](
+    ): void
+  {
+    this.dispose();
+  }
+
   enqueue<V extends T = T>(
       value: V
     ): void
