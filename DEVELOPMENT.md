@@ -32,9 +32,9 @@ Make sure the versions are updated in `package.json`, `CHANGELOG.md`, and
 ```PowerShell
 Remove-Item -Path .\build -Recurse -Force
 Remove-Item -Path .\dist -Recurse -Force
+npm run build && npm run build:dist && npm run lint && npm run test
 npx vsce package
-npm run test
-vsce publish
+npx vsce publish
 ```
 
 ## Versioning
