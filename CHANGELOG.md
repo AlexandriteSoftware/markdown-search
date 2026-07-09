@@ -6,6 +6,10 @@ This file is organised according to [Keep a Changelog][1].
 
 [1]: http://keepachangelog.com/
 
+## 0.2.7
+
+- Code quality improvements: loggins, formatting
+
 ## 0.2.6
 
 - Fix logging
