@@ -2,21 +2,21 @@ import assert
   from 'assert';
 import path
   from 'path';
-import vscode
+import * as vscode
   from 'vscode';
 import os
   from 'os';
 import fs
   from 'fs/promises';
 import { KnowledgeBase }
-  from './KnowledgeBase';
+  from './KnowledgeBase.js';
 import { createLogger }
   from 'winston';
 import { createKbFilesystemEventsIterator }
-  from './KbFilesystemSync';
+  from './KbFilesystemSync.js';
 import { waitFor,
          retry }
-  from './support/controlFlowHelpers';
+  from './support/controlFlowHelpers.js';
 
 suite(
   'KbFilesystemSync Tests',

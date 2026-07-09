@@ -105,11 +105,13 @@ export class AsyncIterableQueue<T>
       return;
     }
 
-    let resolve =
-      this._resolves.shift() || (() => { });
+    const resolve =
+      this._resolves.shift();
 
-    resolve(
-      { done: false,
-        value });
+    if (resolve) {
+      resolve(
+        { done: false,
+          value });
+    }
   }
 }

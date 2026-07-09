@@ -1,25 +1,25 @@
 import assert
   from 'assert';
-import vscode
+import * as vscode
   from 'vscode';
 import fsp
   from 'fs/promises';
 import path
   from 'node:path';
-import { loggers }
-  from '../support/loggers';
+import { getNullLogger }
+  from '../support/loggers.js';
 import { TmpDir }
   from 'asljs-tmpdir';
 import { AsyncIterableQueue }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { EditorEvent }
-  from '../EditorEvents';
+  from '../EditorEvents.js';
 import { KbAddedEvent,
          KbEvent,
          KbFileAddedEvent }
-  from '../KbEvents';
+  from '../KbEvents.js';
 import { processEditorEvents }
-  from './processEditorEvents';
+  from './processEditorEvents.js';
 
 suite(
   'processEditorEvents Tests',
@@ -29,7 +29,7 @@ suite(
       'Start processEditorEvents Tests');
 
     const logger =
-      loggers().getNullLogger();
+      getNullLogger();
 
     test(
       'should transform folder added event to kb added event',

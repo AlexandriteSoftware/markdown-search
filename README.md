@@ -3,8 +3,9 @@
 [![alexandritesoftware.markdown-search][1]][2]
 
 [Markdown Full Text Search][2] is a Visual Studio Code extension designed for
-efficient text searching within Markdown files. This extension allows users to
-effortlessly locate specific text and generate links to it.
+efficient text searching within Markdown knowledge bases. It creates and
+maintains an index of all Markdown files in your workspace, enabling rapid
+searches for words or phrases.
 
 > Built with [Alexandrite Software Library][3] - a set of high-quality,
 performant JavaScript libraries for everyday use.
@@ -17,8 +18,8 @@ performant JavaScript libraries for everyday use.
 
 - Indexes all Markdown files in the workspace for fast searching.
 - Keeps indexes up to date with changes in the workspace.
-- Allows you find words or phrases in Markdown files.
-- Allows you add links to the words or phrases you found.
+- Provides a keyword search for words or phrases in Markdown files.
+- Allows you to add links to the documents you found.
 - Shows you the closest matches to your search at the top.
 - Follows VSCode settings for ignoring files and folders.
 

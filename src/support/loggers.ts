@@ -4,12 +4,6 @@ import { Logger,
          format }
   from 'winston';
 
-export function loggers()
-{
-  return { getNullLogger,
-           getDebugConsoleLogger };
-}
-
 export function getNullLogger(
   ): Logger
 {

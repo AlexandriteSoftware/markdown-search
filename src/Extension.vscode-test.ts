@@ -6,10 +6,10 @@ import { setTimeout }
   from 'node:timers/promises';
 import { TmpDir }
   from 'asljs-tmpdir';
-import vscode
+import * as vscode
   from 'vscode';
 import { replaceWorkspaceFolder }
-  from './support/workspaceHelpers';
+  from './support/workspaceHelpers.js';
 
 suite(
   'Extension Test Suite',

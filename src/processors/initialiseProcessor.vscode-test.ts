@@ -1,9 +1,9 @@
-import vscode
+import * as vscode
   from 'vscode';
-import { loggers }
-  from '../support/loggers';
+import { getNullLogger }
+  from '../support/loggers.js';
 import { initialiseProcessor }
-  from './initialiseProcessor';
+  from './initialiseProcessor.js';
 import MiniSearch
   from 'minisearch';
 
@@ -15,7 +15,7 @@ suite(
       'Start initialiseProcessor Tests');
 
     const logger =
-      loggers().getNullLogger();
+      getNullLogger();
 
     test(
       'should initialise the processor',

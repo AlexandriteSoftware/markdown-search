@@ -1,18 +1,18 @@
 import { Logger }
   from 'winston';
 import { Enqueuer }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { KbEvent,
          isKbAddedEvent,
          isKbFileAddedEvent,
          isKbFileRemovedEvent,
          isKbFileUpdatedEvent,
          isKbRemovedEvent }
-  from '../KbEvents';
+  from '../KbEvents.js';
 import { MiniSearchEvent,
          IndexFile,
          RemoveFile }
-  from '../MiniSearchEvents';
+  from '../MiniSearchEvents.js';
 
 export function processKbEvents(
     log: Logger,

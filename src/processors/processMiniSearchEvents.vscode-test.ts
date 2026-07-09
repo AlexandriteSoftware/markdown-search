@@ -2,18 +2,18 @@ import assert
   from 'node:assert';
 import path
   from 'node:path';
-import vscode
+import * as vscode
   from 'vscode';
 import MiniSearch
   from 'minisearch';
 import { MiniSearchEvent }
-  from '../MiniSearchEvents';
-import { loggers }
-  from '../support/loggers';
+  from '../MiniSearchEvents.js';
+import { getNullLogger }
+  from '../support/loggers.js';
 import { processMiniSearchEvents }
-  from './processMiniSearchEvents';
+  from './processMiniSearchEvents.js';
 import { AsyncIterableQueue }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { TmpDir }
   from 'asljs-tmpdir';
 
@@ -25,7 +25,7 @@ suite(
       'Start processMiniSearchEvents Tests');
 
     const logger =
-      loggers().getNullLogger();
+      getNullLogger();
 
     test(
       'adds and removes files from the index',

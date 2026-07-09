@@ -1,22 +1,23 @@
 import assert
   from 'node:assert';
-import vscode
+import * as vscode
   from 'vscode';
 import path
-  from 'node:path'
-import { loggers }
-  from '../support/loggers';
+  from 'node:path';
+import { getNullLogger }
+  from '../support/loggers.js';
 import { TmpDir }
   from 'asljs-tmpdir';
 import { AsyncIterableQueue }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { KbEvent,
          KbAddedEvent }
-  from '../KbEvents';
-import { IndexFile, MiniSearchEvent}
-  from '../MiniSearchEvents';
+  from '../KbEvents.js';
+import { IndexFile,
+         MiniSearchEvent }
+  from '../MiniSearchEvents.js';
 import { processKbEvents }
-  from './processKbEvents';
+  from './processKbEvents.js';
 
 suite(
   'processKbEvents Tests',
@@ -26,7 +27,7 @@ suite(
       'Start processKbEvents Tests');
 
     const logger =
-      loggers().getNullLogger();
+      getNullLogger();
 
     test(
       'should transform kb added event to minisearch index file event',

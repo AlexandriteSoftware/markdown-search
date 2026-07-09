@@ -1,25 +1,25 @@
 import { Logger }
   from 'winston';
 import { AsyncIterableQueue }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { KbEvent }
-  from '../KbEvents';
+  from '../KbEvents.js';
 import { EditorEvent }
-  from '../EditorEvents';
+  from '../EditorEvents.js';
 import MiniSearch
   from 'minisearch';
 import { MiniSearchEvent }
-  from '../MiniSearchEvents';
+  from '../MiniSearchEvents.js';
 import { Action }
-  from '../Types';
+  from '../Types.js';
 import { processWorkspaceEvents }
-  from './processWorkspaceEvents';
+  from './processWorkspaceEvents.js';
 import { processEditorEvents }
-  from './processEditorEvents';
+  from './processEditorEvents.js';
 import { processKbEvents }
-  from './processKbEvents';
+  from './processKbEvents.js';
 import { processMiniSearchEvents }
-  from './processMiniSearchEvents';
+  from './processMiniSearchEvents.js';
 
 export function initialiseProcessor(
     logger: Logger,

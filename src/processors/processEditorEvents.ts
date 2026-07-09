@@ -7,22 +7,22 @@ import { sep }
 import { Logger }
   from 'winston';
 import { Enqueuer }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { IFile,
          IKnowledgeBase,
          KnowledgeBase }
-  from '../KnowledgeBase';
+  from '../KnowledgeBase.js';
 import { IKbFilesystemSync,
          createKbFilesystemEventsIterator }
-  from '../KbFilesystemSync';
+  from '../KbFilesystemSync.js';
 import { EditorEvent,
          isFolderAddedEvent,
          isFolderRemovedEvent,
          isFileUpdatedEvent,
          isFileDeletedEvent }
-  from '../EditorEvents';
+  from '../EditorEvents.js';
 import { KbEvent }
-  from '../KbEvents';
+  from '../KbEvents.js';
 
 export function processEditorEvents(
     log: Logger,
@@ -132,7 +132,7 @@ export function processEditorEvents(
       files =>
       {
         const isMarkdownFile =
-          (file: IFile) =>
+          (file: IFile): boolean =>
             file.type === 'markdown';
 
         const removedMarkdownFiles =

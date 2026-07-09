@@ -1,6 +1,6 @@
 import assert
   from 'assert';
-import vscode
+import * as vscode
   from 'vscode';
 import { suite,
          test }
@@ -8,7 +8,7 @@ import { suite,
 import { Exclusions,
          KnowledgeBase,
          File }
-  from './KnowledgeBase';
+  from './KnowledgeBase.js';
 
 suite(
   'KnowledgeBase Tests',
@@ -21,7 +21,7 @@ suite(
       () =>
       {
         const exclude: Exclusions = {};
-        exclude["node_modules"] = true;
+        exclude['node_modules'] = true;
 
         const kb = new KnowledgeBase('/projects/kb', exclude);
         kb.files.push(new File('/projects/kb/test.md', '/test.md', new Date()));
@@ -59,7 +59,7 @@ suite(
       () =>
       {
         const exclude: Exclusions = {};
-        exclude["node_modules/**"] = true;
+        exclude['node_modules/**'] = true;
 
         const kb = new KnowledgeBase('/projects/kb', exclude);
 

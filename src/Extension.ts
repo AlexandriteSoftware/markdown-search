@@ -1,4 +1,4 @@
-import vscode
+import * as vscode
   from 'vscode';
 import MiniSearch
   from 'minisearch';
@@ -8,9 +8,9 @@ import { createLogger,
 import Transport
   from 'winston-transport';
 import { initialiseProcessor }
-  from './processors/initialiseProcessor';
+  from './processors/initialiseProcessor.js';
 import { Action }
-  from './Types';
+  from './Types.js';
 
 const EXTENSION_ID = 'markdown-search';
 const EXTENSION_NAME = 'Markdown Full Text Search';
@@ -40,7 +40,7 @@ class OutputChannelTransport
   }
 }
 
-let outputChannelTransport =
+const outputChannelTransport =
   new OutputChannelTransport();
 
 const loggerOptions =
@@ -280,7 +280,8 @@ export function activate(
   disposables.push(disposeProcessor);
 }
 
-export function deactivate()
+export function deactivate(
+  ): void
 {
   for (const disposable of disposables) {
     disposable();

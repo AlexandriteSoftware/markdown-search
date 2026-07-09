@@ -1,12 +1,12 @@
-import vscode
+import * as vscode
   from 'vscode';
 import { Logger }
   from 'winston';
 import { Enqueuer }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { EditorEvent,
          FolderAddedEvent }
-  from '../EditorEvents';
+  from '../EditorEvents.js';
 
 export function processWorkspaceEvents(
     log: Logger,
@@ -166,7 +166,7 @@ export function processWorkspaceEvents(
       Object.assign(
         { },
         configuration.get('files.exclude') as Record<string, boolean>,
-        configuration.get('search.exclude') as Record<string, boolean>)
+        configuration.get('search.exclude') as Record<string, boolean>);
 
     const event: FolderAddedEvent =
       { event: 'folder-added',

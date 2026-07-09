@@ -8,7 +8,7 @@ import { resolve,
 import { minimatch }
   from 'minimatch';
 import { Action }
-  from './Types';
+  from './Types.js';
 
 /**
  * Determines the file type based on its extension.
@@ -258,7 +258,7 @@ export class KnowledgeBase
         this.filesChangedListeners.push(listener);
 
         const unsubscribe =
-          () =>
+          (): void =>
           {
             const index =
               this.filesChangedListeners.indexOf(listener);
@@ -417,11 +417,15 @@ export class KnowledgeBase
       dirname(relativePath);
 
     const folder =
-      '/' + (folderRelativePath === '.' ? '' : folderRelativePath).replace(/\\/g, '/');
+      '/' + (folderRelativePath === '.'
+? ''
+: folderRelativePath).replace(/\\/g, '/');
 
     return new File(
       fullPath,
-      (folder === '/' ? '' : folder) + '/' + name,
+      (folder === '/'
+? ''
+: folder) + '/' + name,
       modified);
   }
 

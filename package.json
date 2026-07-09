@@ -2,6 +2,7 @@
   "name": "markdown-search",
   "displayName": "Markdown Full Text Search",
   "description": "Markdown Full Text Search is a Visual Studio Code extension designed for efficient text searching within Markdown files. This extension allows users to effortlessly locate specific text and generate links to it.",
+  "type": "module",
   "keywords": [
     "markdown",
     "search"
@@ -18,7 +19,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./dist/main.js",
+  "main": "./dist/main.cjs",
   "repository": {
     "type": "git",
     "url": "https://github.com/AlexandriteSoftware/markdown-search.git"
@@ -61,20 +62,18 @@
     }
   },
   "scripts": {
+    "format:json": "prettier --write --no-error-on-unmatched-pattern \"*.json\"",
+    "format": "npm run format:json",
     "build": "tsc -p tsconfig.build.json",
-    "build:dist": "tsc -p tsconfig.dist.json",
-    "build:out": "tsc -p tsconfig.out.json",
-    "watch:out": "tsc -watch -p tsconfig.out.json",
-    "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "esbuild ./src/Extension.ts --bundle --outfile=dist/main.js --external:vscode --format=cjs --platform=node",
-    "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-    "lint": "eslint src --ext ts",
-    "test": "node --test build/**/*.test.js",
+    "build:dist": "esbuild ./src/Extension.ts --bundle --outfile=dist/main.cjs --external:vscode --format=cjs --platform=node --sourcemap",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "npm run test:unit && npm run test:vscode",
+    "test:unit": "node --test --enable-source-maps build/**/*.test.js",
     "test:vscode": "vscode-test",
     "package": "vsce package",
-    "publish": "vsce publish",
-    "all": "npm run build:out && npm run lint && npm run test:vscode"
+    "publish": "vsce publish"
   },
   "dependencies": {
     "glob": "^13.0.6",
@@ -83,6 +82,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.1.1",
     "@types/vscode": "^1.125.0",
@@ -90,10 +90,14 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "^3.9.2",
+    "acorn": "^8.17.0",
     "asljs-tmpdir": "^0.1.10",
     "esbuild": "^0.28.1",
     "eslint": "^10.6.0",
+    "marked": "^18.0.5",
     "mocha": "^11.7.6",
-    "typescript": "^6.0.3"
+    "prettier": "^3.9.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.63.0"
   }
 }

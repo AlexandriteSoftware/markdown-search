@@ -1,6 +1,6 @@
 import path
   from 'path';
-import vscode
+import * as vscode
   from 'vscode';
 
 /**

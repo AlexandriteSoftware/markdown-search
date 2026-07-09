@@ -7,7 +7,7 @@ import { Logger }
 import { MiniSearchEvent,
          isIndexFile,
          isRemoveFile }
-  from '../MiniSearchEvents';
+  from '../MiniSearchEvents.js';
 
 export function processMiniSearchEvents(
     log: Logger,
@@ -86,7 +86,7 @@ export function processMiniSearchEvents(
         log.debug(
           '[%s] addFileToSearchIndex(...): %s',
           context,
-          (e || "").toString());
+          (e || '').toString());
       }
     }
 
@@ -120,7 +120,7 @@ export function processMiniSearchEvents(
       log.debug(
         '[%s] removePathFromSearchIndex(...): %s',
         context,
-        (e || "").toString());
+        (e || '').toString());
     }
   }
 }

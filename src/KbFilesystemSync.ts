@@ -8,7 +8,7 @@ import { Logger }
   from 'winston';
 import { IKnowledgeBase,
          IFile }
-  from './KnowledgeBase';
+  from './KnowledgeBase.js';
 
 const modules = { path };
 

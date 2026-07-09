@@ -1,23 +1,23 @@
 import assert
   from 'node:assert';
-import vscode
+import * as vscode
   from 'vscode';
 import path
   from 'node:path';
 import { AsyncIterableQueue }
-  from '../AsyncIterableQueue';
+  from '../AsyncIterableQueue.js';
 import { EditorEvent,
          isFolderAddedEvent,
          isFileUpdatedEvent }
-  from '../EditorEvents';
+  from '../EditorEvents.js';
 import { processWorkspaceEvents }
-  from './processWorkspaceEvents';
+  from './processWorkspaceEvents.js';
 import { TmpDir }
   from 'asljs-tmpdir';
 import { replaceWorkspaceFolder }
-  from '../support/workspaceHelpers';
-import { loggers }
-  from '../support/loggers';
+  from '../support/workspaceHelpers.js';
+import { getNullLogger }
+  from '../support/loggers.js';
 
 suite(
   'processWorkspaceEvents Tests',
@@ -26,7 +26,8 @@ suite(
     vscode.window.showInformationMessage(
       'Start processWorkspaceEvents Tests');
 
-    const logger = loggers().getNullLogger();
+    const logger =
+      getNullLogger();
 
     test(
       'should notify about the folder added event and the file updated events',
