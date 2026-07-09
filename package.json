@@ -70,27 +70,27 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "vscode-test",
-    "test-compile": "tsc -p ./",
     "package": "vsce package",
-    "publish": "vsce publish"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^26.0.1",
-    "@types/vscode": "^1.125.0",
-    "@typescript-eslint/eslint-plugin": "^8.62.1",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0",
-    "esbuild": "^0.28.1",
-    "eslint": "^10.6.0",
-    "mocha": "^11.7.6",
-    "typescript": "^6.0.3",
-    "vsce": "^2.15.0"
+    "publish": "vsce publish",
+    "all": "npm run compile && npm run lint && npm run test"
   },
   "dependencies": {
     "glob": "^13.0.6",
     "minimatch": "^10.2.5",
     "minisearch": "^7.2.0",
     "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.1.1",
+    "@types/vscode": "^1.125.0",
+    "@typescript-eslint/eslint-plugin": "^8.63.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.6.0",
+    "mocha": "^11.7.6",
+    "typescript": "^6.0.3"
   }
 }

@@ -28,7 +28,10 @@ suite(
             { fields: ['title', 'text'],
               storeFields: ['title', 'path'] });
 
-        const dispose = initialiseProcessor(logger, miniSearch);
+        const dispose =
+          initialiseProcessor(
+            logger,
+            miniSearch);
 
         dispose();
       });

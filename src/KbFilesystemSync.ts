@@ -142,13 +142,35 @@ export async function createKbFilesystemEventsIterator(
     kb: IKnowledgeBase
   ): Promise<IKbFilesystemSync>
 {
-  const files = [];
+  const files: IFile[] = [];
+
   for await (const file of findKbFiles(log, kb)) {
     files.push(file);
   }
+
   kb.addFiles(files);
 
-  log.info(`[KbFilesystemSync] added ${files.length} files to the knowledge base.`);
+  log.info(
+    `[KbFilesystemSync] added ${files.length} files to the knowledge base.`);
+
+  if (log.isDebugEnabled()) {
+    const countFilesByType =
+      files.reduce(
+        (acc, file) => {
+          if (!acc[file.type]) {
+            acc[file.type] = 1;
+          } else {
+            acc[file.type]++;
+          }
+
+          return acc;
+        },
+        { } as { [key: string]: number });
+
+    for (const [type, count] of Object.entries(countFilesByType)) {
+      log.debug(`[KbFilesystemSync] ${count} files of type "${type}" added to the knowledge base.`);
+    }
+  }
 
   const ac = new AbortController();
 

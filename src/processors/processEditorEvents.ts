@@ -79,8 +79,9 @@ export function processEditorEvents(
     ): Promise<IKnowledgeBase | null>
   {
     log.info(
-      '[%s] Adding knowledge base: %s',
+      '[%s] { root: %s } Adding the knowledge base \'%s\'.',
       context,
+      root,
       root);
 
     const existing =
@@ -89,8 +90,8 @@ export function processEditorEvents(
           kb.root === root);
 
     if (existing) {
-      log.info(
-        '[%s] The knowledge base "%s" has been added already.',
+      log.warn(
+        '[%s] { root: %s } The knowledge base has been added already.',
         context,
         root);
 
@@ -101,8 +102,8 @@ export function processEditorEvents(
       await stat(root);
 
     if (st === null) {
-      log.info(
-        '[%s] The knowledge base "%s" does not exist.',
+      log.warn(
+        '[%s] { root: %s } The knowledge base does not exist.',
         context,
         root);
 
@@ -115,6 +116,11 @@ export function processEditorEvents(
         exclude);
 
     knowledgeBases.push(kb);
+
+    log.debug(
+      '[%s] { root: %s } Enqueue event \'kb-added\'.',
+      context,
+      root);
 
     enqueuer.enqueue(
       { event: 'kb-added',
@@ -150,12 +156,22 @@ export function processEditorEvents(
         }
       });
 
+    log.debug(
+      '[%s] { root: %s } Creating the knowledge base filesystem events iterator.',
+      context,
+      root);
+
     const sync =
       await createKbFilesystemEventsIterator(
         log,
         kb);
 
     kbFsSyncs.push(sync);
+
+    log.info(
+      '[%s] { root: %s } The knowledge base added.',
+      context,
+      root);
 
     return kb;
   }

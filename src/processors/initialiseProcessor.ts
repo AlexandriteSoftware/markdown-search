@@ -26,9 +26,14 @@ export function initialiseProcessor(
     miniSearch: MiniSearch
   ): Action
 {
-  const editorEventsQueue = new AsyncIterableQueue<EditorEvent>();
-  const kbEventsQueue = new AsyncIterableQueue<KbEvent>();
-  const miniSearchQueue = new AsyncIterableQueue<MiniSearchEvent>();
+  const editorEventsQueue =
+    new AsyncIterableQueue<EditorEvent>();
+
+  const kbEventsQueue =
+    new AsyncIterableQueue<KbEvent>();
+
+  const miniSearchQueue =
+    new AsyncIterableQueue<MiniSearchEvent>();
 
   const disposeWorkspaceEventProcessor =
     processWorkspaceEvents(
@@ -54,7 +59,8 @@ export function initialiseProcessor(
       miniSearch);
 
   const dispose =
-    () =>
+    (
+      ): void =>
     {
       disposeWorkspaceEventProcessor();
       disposeEditorEventProcessor();
