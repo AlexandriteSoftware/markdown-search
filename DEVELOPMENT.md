@@ -30,7 +30,7 @@ Make sure the versions are updated in `package.json`, `CHANGELOG.md`, and
 `Extension.ts`.
 
 ```PowerShell
-Remove-Item -Path .\out -Recurse -Force
+Remove-Item -Path .\build -Recurse -Force
 Remove-Item -Path .\dist -Recurse -Force
 npx vsce package
 npm run test
