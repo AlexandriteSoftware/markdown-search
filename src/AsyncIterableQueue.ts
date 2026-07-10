@@ -23,16 +23,15 @@ export class AsyncIterableQueue<T>
     DisposableAsyncIterable<T>,
     Enqueuer<T>
 {
-  private readonly _values: T[] = [];
-  private readonly _resolves: ((value: IteratorResult<T>) => void)[] = [];
-  private readonly _dispose: () => void = () => { };
-  private _disposed: boolean = false;
+  readonly #values: T[] = [];
+  readonly #resolves: ((value: IteratorResult<T>) => void)[] = [];
+  readonly #dispose?: () => Promise<void>;
+  #disposed: boolean = false;
 
   constructor(
-    dispose?: () => void)
+    dispose?: () => Promise<void>)
   {
-    this._dispose =
-      dispose || (() => { });
+    this.#dispose = dispose;
   }
 
   /**
@@ -47,20 +46,20 @@ export class AsyncIterableQueue<T>
     return {
       next: (): Promise<IteratorResult<T>> =>
       {
-        if (this._disposed) {
+        if (this.#disposed) {
           return Promise.resolve<IteratorResult<T>>(
             { done: true,
               value: undefined });
         }
 
-        if (this._values.length === 0) {
+        if (this.#values.length === 0) {
           return new Promise<IteratorResult<T>>(
             resolve =>
-              this._resolves.push(resolve));
+              this.#resolves.push(resolve));
         }
 
         const value =
-          this._values.shift() as T;
+          this.#values.shift() as T;
 
         return Promise.resolve<IteratorResult<T>>(
           { done: false,
@@ -72,17 +71,19 @@ export class AsyncIterableQueue<T>
   dispose(
     ): void
   {
-    this._disposed = true;
+    this.#disposed = true;
 
-    this._dispose();
+    this.#dispose?.();
 
-    while (this._resolves.length > 0) {
+    while (this.#resolves.length > 0) {
       const resolve =
-        this._resolves.shift() || (() => { });
+        this.#resolves.shift();
 
-      resolve(
-        { done: true,
-          value: undefined });
+      if (resolve) {
+        resolve(
+          { done: true,
+            value: undefined });
+      }
     }
   }
 
@@ -96,17 +97,17 @@ export class AsyncIterableQueue<T>
       value: V
     ): void
   {
-    if (this._disposed) {
+    if (this.#disposed) {
       return;
     }
 
-    if (this._resolves.length === 0) {
-      this._values.push(value);
+    if (this.#resolves.length === 0) {
+      this.#values.push(value);
       return;
     }
 
     const resolve =
-      this._resolves.shift();
+      this.#resolves.shift();
 
     if (resolve) {
       resolve(
